@@ -8,10 +8,10 @@ use uuid::Uuid;
 
 pub type TaskID = Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     created_at: OffsetDateTime, // just a metadata
-    description: String,
+    pub description: String,
     pub task_id: TaskID, // used as the unique id of the task
     pub clock_type: ClockType,
 }

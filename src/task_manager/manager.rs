@@ -27,7 +27,8 @@ impl<P: AsRef<Path> + Debug> TaskManager<P> {
         self.task_appender.write_all(bytes.as_slice())?;
         self.task_appender.write_all("\n".as_bytes())?;
         self.task_appender.flush()?;
-        self.scheduler.add_task(self.tasks.last().unwrap())?;
+        self.scheduler
+            .add_task(self.tasks.last().unwrap().clone())?;
         Ok(task_id)
     }
 
@@ -48,7 +49,7 @@ impl<P: AsRef<Path> + Debug> TaskManager<P> {
         }
         self.task_appender.flush()?;
         self.task_appender = OpenOptions::new().append(true).open(&self.path)?;
-        self.scheduler.cancel_task(&task)?;
+        self.scheduler.cancel_task(task.clone())?;
         Ok(())
     }
 

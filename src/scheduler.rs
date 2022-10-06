@@ -1,3 +1,4 @@
+use crate::notify::desktop_notification;
 use crate::task_manager::{ClockType, Task, TaskID};
 
 use std::collections::HashMap;
@@ -12,6 +13,8 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 
+const SUMMARY: &str = "task-reminder";
+
 pub struct Scheduler {
     task_sender: mpsc::Sender<SchedulerCommand>,
 }
@@ -22,8 +25,8 @@ pub struct InnerScheduler {
 
 #[derive(Debug)]
 enum SchedulerCommand {
-    Add(TaskID, ClockType),
-    Cancel(TaskID),
+    Add(Task),
+    Cancel(Task),
 }
 
 #[derive(Clone, Debug)]
@@ -50,18 +53,16 @@ impl Scheduler {
             task_sender: sender,
         }
     }
-    pub fn add_task(&mut self, task: &Task) -> Result<()> {
+    pub fn add_task(&mut self, task: Task) -> Result<()> {
         if self.check_inner_scheduler_crashed() {
             panic!("the inner scheduler has paniced!");
         }
-        match self
-            .task_sender
-            .blocking_send(SchedulerCommand::Add(task.task_id, task.clock_type.clone()))
-        {
+        let clock_type = task.clock_type.clone();
+        match self.task_sender.blocking_send(SchedulerCommand::Add(task)) {
             Ok(()) => {
                 debug!(
                     "successfully send new task to inner scheduler: {}",
-                    task.clock_type
+                    clock_type
                 );
                 Ok(())
             }
@@ -69,18 +70,19 @@ impl Scheduler {
         }
     }
 
-    pub fn cancel_task(&self, task: &Task) -> Result<()> {
+    pub fn cancel_task(&self, task: Task) -> Result<()> {
         if self.check_inner_scheduler_crashed() {
             panic!("the inner scheduler has paniced!");
         }
+        let task_id = task.task_id.clone();
         match self
             .task_sender
-            .blocking_send(SchedulerCommand::Cancel(task.task_id))
+            .blocking_send(SchedulerCommand::Cancel(task))
         {
             Ok(()) => {
                 debug!(
                     "successfully cancel new task to inner scheduler: {}",
-                    task.task_id
+                    task_id
                 );
                 Ok(())
             }
@@ -107,11 +109,13 @@ impl InnerScheduler {
         rt.block_on(async {
             while let Some(scheduler_command) = task_receiver.recv().await {
                 match scheduler_command {
-                    SchedulerCommand::Add(task_id, clock_type) => {
-                        self.add_task(task_id, clock_type);
+                    SchedulerCommand::Add(task) => {
+                        self.add_task(task);
                     }
                     SchedulerCommand::Cancel(task_id) => {
                         if let Err(e) = self.cancel_task(task_id) {
+                            // no active receivers
+                            // https://docs.rs/tokio/latest/tokio/sync/broadcast/error/struct.SendError.html
                             error!("fail to cancel task: {}", e);
                         }
                     }
@@ -120,23 +124,30 @@ impl InnerScheduler {
         });
     }
 
-    pub fn add_task(&mut self, task_id: TaskID, clock_type: ClockType) {
+    pub fn add_task(&mut self, task: Task) {
+        let task_id = task.task_id;
+        let clock_type = task.clock_type;
+        let description = task.description;
         info!("add new clock task: {}, {}", task_id, clock_type);
         let (sender, receiver) = broadcast::channel(1);
         self.cancel_channels.insert(task_id, sender);
         // enter the tokio rt context so that we can use tokio::spawn
         match clock_type {
-            ClockType::Once(next_fire) => tokio::spawn(once_clock(next_fire, receiver)),
-            ClockType::Period(period) => tokio::spawn(period_clock(period, receiver)),
+            ClockType::Once(next_fire) => {
+                tokio::spawn(once_clock(description, next_fire, receiver))
+            }
+            ClockType::Period(period) => tokio::spawn(period_clock(description, period, receiver)),
         };
     }
 
-    pub fn cancel_task(&mut self, task_id: TaskID) -> Result<()> {
+    pub fn cancel_task(&mut self, task: Task) -> Result<()> {
+        let task_id = task.task_id;
         if let Some(sender) = self.cancel_channels.get(&task_id) {
             if let Err(e) = sender
                 .send(TaskCommand::Stop)
                 .context("fail to send stop to clock")
             {
+                // no active receivers
                 return Err(anyhow!("fail to send cancel task: {}", e));
             }
         } else {
@@ -146,7 +157,11 @@ impl InnerScheduler {
     }
 }
 
-async fn period_clock(period: Duration, mut receiver: broadcast::Receiver<TaskCommand>) {
+async fn period_clock(
+    description: String,
+    period: Duration,
+    mut receiver: broadcast::Receiver<TaskCommand>,
+) {
     loop {
         tokio::select! {
             val = receiver.recv() => {
@@ -157,12 +172,20 @@ async fn period_clock(period: Duration, mut receiver: broadcast::Receiver<TaskCo
             }
             _ = sleep(period) => {
                 info!("a periodic clock fire!");
+                if let Err(e) = desktop_notification(SUMMARY, &description) {
+                    error!("fail to send de notification: {}", e);
+                    return
+                }
             }
         }
     }
 }
 
-async fn once_clock(next_fire: OffsetDateTime, mut receiver: broadcast::Receiver<TaskCommand>) {
+async fn once_clock(
+    description: String,
+    next_fire: OffsetDateTime,
+    mut receiver: broadcast::Receiver<TaskCommand>,
+) {
     let now = OffsetDateTime::now_utc();
     if now >= next_fire {
         warn!(
@@ -181,6 +204,9 @@ async fn once_clock(next_fire: OffsetDateTime, mut receiver: broadcast::Receiver
         }
         _ = sleep(duration) => {
             info!("a clock fire!");
+            if let Err(e) = desktop_notification(SUMMARY, &description) {
+                error!("fail to send notification: {}", e);
+            }
         }
     }
 }

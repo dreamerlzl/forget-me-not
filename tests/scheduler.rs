@@ -20,7 +20,7 @@ fn once_clock() -> Result<()> {
     let scheduler = Scheduler::new();
     let mut tm = TaskManager::new(&path, scheduler)?;
     let clock_type = ClockType::Once(OffsetDateTime::now_utc() + Duration::seconds(1));
-    let new_task = Task::new("".to_owned(), clock_type.clone());
+    let new_task = Task::new("just a test".to_owned(), clock_type.clone());
     tm.add_task(new_task)?;
 
     sleep(std::time::Duration::from_secs(2));
