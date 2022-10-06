@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use serde_json::from_str;
 
-use std::fmt::Debug;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, Write};
 use std::path::Path;
@@ -9,14 +8,14 @@ use std::path::Path;
 use crate::scheduler::Scheduler;
 use crate::task_manager::Task;
 
-pub struct TaskManager<P: AsRef<Path> + Debug> {
+pub struct TaskManager<P: AsRef<Path>> {
     scheduler: Scheduler,
     tasks: Vec<Task>,
     task_appender: File,
     path: P,
 }
 
-impl<P: AsRef<Path> + Debug> TaskManager<P> {
+impl<P: AsRef<Path>> TaskManager<P> {
     pub fn add_task(&mut self, task: Task) -> Result<usize> {
         // push the task to the scheduler
         // and returns back a unique id
@@ -32,12 +31,12 @@ impl<P: AsRef<Path> + Debug> TaskManager<P> {
         Ok(task_id)
     }
 
-    pub fn remove_task(&mut self, task_id: usize) -> Result<()> {
+    pub fn cancel_task(&mut self, index: usize) -> Result<()> {
         // to avoid panics
-        if task_id >= self.tasks.len() {
-            return Err(anyhow!("task_id doesn't exist: {}", task_id));
+        if index >= self.tasks.len() {
+            return Err(anyhow!("task_id doesn't exist: {}", index));
         }
-        let task = self.tasks.remove(task_id);
+        let task = self.tasks.remove(index);
         // rewrite the whole task file
         self.task_appender = OpenOptions::new()
             .truncate(true)
@@ -59,7 +58,7 @@ impl<P: AsRef<Path> + Debug> TaskManager<P> {
             .create(true)
             .append(true)
             .open(&path)
-            .with_context(|| format!("fail to open task store: {:?}", &path))?;
+            .with_context(|| format!("fail to open task store"))?;
         let tasks = read_tasks(&path)?;
         Ok(TaskManager {
             scheduler,
@@ -72,10 +71,10 @@ impl<P: AsRef<Path> + Debug> TaskManager<P> {
 
 pub fn read_tasks<P>(path: P) -> Result<Vec<Task>>
 where
-    P: AsRef<Path> + Debug,
+    P: AsRef<Path>,
 {
     let mut tasks = vec![];
-    let file = File::open(&path).context(format!("fail to load persistent tasks {:?}", &path))?;
+    let file = File::open(&path).context(format!("fail to load persistent tasks"))?;
     for line in io::BufReader::new(file).lines() {
         let line = line?;
         if line.is_empty() {

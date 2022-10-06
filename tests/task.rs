@@ -55,7 +55,7 @@ fn remove_task() -> Result<()> {
     let tasks = read_tasks(&path)?;
     assert_eq!(tasks[2].task_id, new_task_id_3);
 
-    tm.remove_task(task_id)?;
+    tm.cancel_task(task_id)?;
 
     let tasks = read_tasks(&path)?;
     assert_eq!(tasks.len(), 2);

@@ -59,7 +59,7 @@ fn cancel_clock() -> Result<()> {
 
     sleep(std::time::Duration::from_secs(2));
 
-    tm.remove_task(task_id)
+    tm.cancel_task(task_id)
         .context("fail to cancel periodic_clock in test")?;
 
     sleep(std::time::Duration::from_secs(2));
