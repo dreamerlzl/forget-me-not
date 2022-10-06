@@ -1,8 +1,9 @@
 use std::fmt::Display;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::to_vec;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub type TaskID = Uuid;
@@ -11,26 +12,36 @@ pub type TaskID = Uuid;
 pub struct Task {
     created_at: OffsetDateTime, // just a metadata
     description: String,
-    pub task_id: TaskID,           // used as the unique id of the task
-    pub next_fire: OffsetDateTime, // for at, after, on
-    period: Option<Duration>,      // for per
+    pub task_id: TaskID, // used as the unique id of the task
+    pub clock_type: ClockType,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ClockType {
+    Once(OffsetDateTime),
+    Period(Duration),
+}
+
+impl Display for ClockType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ClockType::Once(next_fire) => {
+                write!(f, "once at {}", next_fire)
+            }
+            ClockType::Period(period) => {
+                write!(f, "every {} secs", period.as_secs())
+            }
+        }
+    }
 }
 
 impl Task {
-    pub fn new(description: String, next_fire: OffsetDateTime) -> Self {
+    pub fn new(description: String, clock_type: ClockType) -> Self {
         Task {
             description,
-            next_fire,
-            created_at: OffsetDateTime::now_local().expect("fail to create local datetime"),
-            period: None,
+            clock_type,
+            created_at: OffsetDateTime::now_utc(),
             task_id: Uuid::new_v4(),
-        }
-    }
-
-    pub fn with_period(self, period: Duration) -> Self {
-        Task {
-            period: Some(period),
-            ..self
         }
     }
 
@@ -41,18 +52,10 @@ impl Task {
 
 impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(period) = self.period {
-            write!(
-                f,
-                "{0: <30} {1: <15} {2: <15}",
-                self.description, self.next_fire, period
-            )
-        } else {
-            write!(
-                f,
-                "{0: <30} {1: <15} {2: <15}",
-                self.description, self.next_fire, ""
-            )
-        }
+        write!(
+            f,
+            "{: <30} {: <15} {: <15}",
+            self.description, self.clock_type, self.created_at
+        )
     }
 }

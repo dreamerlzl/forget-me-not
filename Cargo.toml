@@ -7,9 +7,12 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.65"
+env_logger = "0.9.1"
+log = "0.4.17"
 serde = { version = "1.0.145", features = ["derive"] }
 serde_json = "1.0.85"
 time = { version = "0.3.15", features = ["local-offset", "serde", "macros"] }
+tokio = { version = "1.21.2", features = ["time", "rt", "sync", "macros"] }
 uuid = { version = "1.1.2", features = ["v4", "serde"] }
 
 [dev-dependencies]

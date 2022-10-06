@@ -1,3 +1,3 @@
 pub mod manager;
 mod task;
-pub use task::{Task, TaskID};
+pub use task::{ClockType, Task, TaskID};
