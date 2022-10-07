@@ -9,7 +9,7 @@ use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
 
 use task_reminder::comm::{Request, Response};
-use task_reminder::task_manager::{read_tasks, ClockType};
+use task_reminder::task_manager::ClockType;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about=None)]
@@ -60,20 +60,20 @@ fn main() -> Result<()> {
             }
         },
         Command::Rm { index } => Request::Cancel(index),
-        Command::Show => {
-            let path = env::var("REMINDER_TASK_STORE")
-                .unwrap_or_else(|_| format!("{}/reminder", env::var("HOME").unwrap()));
-            show_tasks(&path)?;
-            return Ok(());
-        }
+        Command::Show => Request::Show,
     };
 
     //println!("request is {:?}", request);
     let dest = env::var("REMINDER_DAEMON_ADDR").unwrap_or_else(|_| "127.0.0.1:8082".to_owned());
     match send_request(request.clone(), &dest) {
-        Ok(response) => {
-            println!("success: {:?}", response);
-        }
+        Ok(response) => match response {
+            Response::GetTasks(tasks) => {
+                for (i, task) in tasks.into_iter().enumerate() {
+                    println!("{} {}", i, task);
+                }
+            }
+            _ => println!("success: {:?}", response),
+        },
         Err(e) => {
             println!("fail to remind task {:?}: {}", request, e);
         }
@@ -88,7 +88,7 @@ fn send_request(request: Request, dest: &str) -> Result<Response> {
     socket
         .send_to(serialized.as_bytes(), dest)
         .context(format!("fail to send to {}", dest))?;
-    let mut buf = [0; 128];
+    let mut buf = [0; 1024];
     let amt = socket.recv(&mut buf)?;
     let response: Response = from_slice(&buf[..amt]).context("fail to deserialize response")?;
     Ok(response)
@@ -163,14 +163,6 @@ fn parse_duration(duration: &str) -> Result<Duration> {
     } else {
         Ok(Duration::from_secs(0))
     }
-}
-
-fn show_tasks(path: &str) -> Result<()> {
-    let tasks = read_tasks(path)?;
-    for (i, task) in tasks.into_iter().enumerate() {
-        println!("{} {}", i, task);
-    }
-    Ok(())
 }
 
 #[cfg(test)]

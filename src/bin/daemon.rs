@@ -22,33 +22,40 @@ fn main() -> Result<()> {
 
 fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()> {
     let socket = UdpSocket::bind(addr).context("fail to create udp server socket")?;
-    let mut buf = [0; 128];
+    let mut buf = [0; 1024];
     loop {
         let (amt, src) = socket
             .recv_from(&mut buf)
             .context("fail to receive udp packet")?;
+
         let request: Request =
             from_slice(&buf[..amt]).context("fail to deserialize a udp request")?;
-        let response = match request {
-            Request::Add(description, clock_type) => {
-                match tm.add_task(Task::new(description, clock_type)) {
-                    Err(e) => {
-                        error!("fail to add new task in udp server: {}", e);
+        let response = if let Err(e) = tm.refresh() {
+            error!("fail to refresh task store: {}", e);
+            Response::Fail(format!("fail to refresh task store: {}", e))
+        } else {
+            match request {
+                Request::Add(description, clock_type) => {
+                    match tm.add_task(Task::new(description, clock_type)) {
+                        Err(e) => {
+                            error!("fail to add new task in udp server: {}", e);
+                            Response::Fail(e.to_string())
+                        }
+                        Ok(index) => {
+                            info!("successfully add task with index: {}", index);
+                            Response::AddSuccess(index)
+                        }
+                    }
+                }
+                Request::Cancel(index) => {
+                    if let Err(e) = tm.cancel_task(index) {
+                        error!("fail to cancel task with index %d: {}", e);
                         Response::Fail(e.to_string())
-                    }
-                    Ok(index) => {
-                        info!("successfully add task with index: {}", index);
-                        Response::AddSuccess(index)
+                    } else {
+                        Response::CancelSuccess
                     }
                 }
-            }
-            Request::Cancel(index) => {
-                if let Err(e) = tm.cancel_task(index) {
-                    error!("fail to cancel task with index %d: {}", e);
-                    Response::Fail(e.to_string())
-                } else {
-                    Response::CancelSuccess
-                }
+                Request::Show => Response::GetTasks(tm.get_tasks()),
             }
         };
         let serialized = to_string(&response).expect("fail to serialize response");

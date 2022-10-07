@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use serde_json::from_str;
+use time::OffsetDateTime;
 
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, Write};
@@ -7,6 +8,8 @@ use std::path::Path;
 
 use crate::scheduler::Scheduler;
 use crate::task_manager::Task;
+
+use super::ClockType;
 
 pub struct TaskManager<P: AsRef<Path>> {
     scheduler: Scheduler,
@@ -31,6 +34,10 @@ impl<P: AsRef<Path>> TaskManager<P> {
         Ok(task_id)
     }
 
+    pub fn get_tasks(&self) -> Vec<Task> {
+        return self.tasks.clone();
+    }
+
     pub fn cancel_task(&mut self, index: usize) -> Result<()> {
         // to avoid panics
         if index >= self.tasks.len() {
@@ -38,6 +45,26 @@ impl<P: AsRef<Path>> TaskManager<P> {
         }
         let task = self.tasks.remove(index);
         // rewrite the whole task file
+        self.refresh_storage()?;
+        self.scheduler.cancel_task(task.clone())?;
+        Ok(())
+    }
+
+    pub fn refresh(&mut self) -> Result<()> {
+        let now = OffsetDateTime::now_utc();
+        let before = self.tasks.len();
+        self.tasks.retain(|task| match task.clock_type {
+            ClockType::Once(next_fire) => next_fire > now,
+            _ => true,
+        });
+        // refresh persistent store only if there are changes
+        if self.tasks.len() != before {
+            self.refresh_storage()?;
+        }
+        Ok(())
+    }
+
+    fn refresh_storage(&mut self) -> Result<()> {
         self.task_appender = OpenOptions::new()
             .truncate(true)
             .write(true)
@@ -48,7 +75,6 @@ impl<P: AsRef<Path>> TaskManager<P> {
         }
         self.task_appender.flush()?;
         self.task_appender = OpenOptions::new().append(true).open(&self.path)?;
-        self.scheduler.cancel_task(task.clone())?;
         Ok(())
     }
 
