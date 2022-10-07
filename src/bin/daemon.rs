@@ -41,14 +41,11 @@ fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()
                             error!("fail to add new task in udp server: {}", e);
                             Response::Fail(e.to_string())
                         }
-                        Ok(index) => {
-                            info!("successfully add task with index: {}", index);
-                            Response::AddSuccess(index)
-                        }
+                        Ok(_) => Response::AddSuccess,
                     }
                 }
-                Request::Cancel(index) => {
-                    if let Err(e) = tm.cancel_task(index) {
+                Request::Cancel(task_id) => {
+                    if let Err(e) = tm.cancel_task(task_id) {
                         error!("fail to cancel task with index %d: {}", e);
                         Response::Fail(e.to_string())
                     } else {

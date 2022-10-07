@@ -9,7 +9,7 @@ use std::path::Path;
 use crate::scheduler::Scheduler;
 use crate::task_manager::Task;
 
-use super::ClockType;
+use super::{ClockType, TaskID};
 
 pub struct TaskManager<P: AsRef<Path>> {
     scheduler: Scheduler,
@@ -19,35 +19,34 @@ pub struct TaskManager<P: AsRef<Path>> {
 }
 
 impl<P: AsRef<Path>> TaskManager<P> {
-    pub fn add_task(&mut self, task: Task) -> Result<usize> {
+    pub fn add_task(&mut self, task: Task) -> Result<()> {
         // push the task to the scheduler
         // and returns back a unique id
         // which would be later used to cancel a periodic task
         let bytes = task.to_bytes();
-        let task_id = self.tasks.len();
         self.tasks.push(task);
         self.task_appender.write_all(bytes.as_slice())?;
         self.task_appender.write_all("\n".as_bytes())?;
         self.task_appender.flush()?;
         self.scheduler
             .add_task(self.tasks.last().unwrap().clone())?;
-        Ok(task_id)
+        Ok(())
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
         return self.tasks.clone();
     }
 
-    pub fn cancel_task(&mut self, index: usize) -> Result<()> {
-        // to avoid panics
-        if index >= self.tasks.len() {
-            return Err(anyhow!("task_id doesn't exist: {}", index));
+    pub fn cancel_task(&mut self, task_id: TaskID) -> Result<()> {
+        if let Some(index) = self.tasks.iter().position(|task| task.task_id == task_id) {
+            // rewrite the whole task file
+            let task = self.tasks.swap_remove(index);
+            self.refresh_storage()?;
+            self.scheduler.cancel_task(task)?;
+            Ok(())
+        } else {
+            Err(anyhow!(format!("no such task found: {}", task_id)))
         }
-        let task = self.tasks.remove(index);
-        // rewrite the whole task file
-        self.refresh_storage()?;
-        self.scheduler.cancel_task(task.clone())?;
-        Ok(())
     }
 
     pub fn refresh(&mut self) -> Result<()> {
@@ -79,13 +78,16 @@ impl<P: AsRef<Path>> TaskManager<P> {
     }
 
     // new returns a new TaskManager
-    pub fn new(path: P, scheduler: Scheduler) -> Result<Self> {
+    pub fn new(path: P, mut scheduler: Scheduler) -> Result<Self> {
         let task_appender = OpenOptions::new()
             .create(true)
             .append(true)
             .open(&path)
             .with_context(|| format!("fail to open task store"))?;
         let tasks = read_tasks(&path)?;
+        for task in tasks.iter() {
+            scheduler.add_task(task.clone())?;
+        }
         Ok(TaskManager {
             scheduler,
             tasks,

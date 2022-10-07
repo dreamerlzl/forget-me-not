@@ -44,7 +44,7 @@ fn remove_task() -> Result<()> {
     let clock_type = ClockType::Once(datetime!(2022-01-02 11:12:14 +8));
     let new_task = Task::new("".to_owned(), clock_type);
     let new_task_id = new_task.task_id;
-    let task_id = tm.add_task(new_task)?;
+    tm.add_task(new_task)?;
     let tasks = read_tasks(&path)?;
     assert_eq!(tasks[1].task_id, new_task_id);
 
@@ -55,7 +55,7 @@ fn remove_task() -> Result<()> {
     let tasks = read_tasks(&path)?;
     assert_eq!(tasks[2].task_id, new_task_id_3);
 
-    tm.cancel_task(task_id)?;
+    tm.cancel_task(new_task_id)?;
 
     let tasks = read_tasks(&path)?;
     assert_eq!(tasks.len(), 2);

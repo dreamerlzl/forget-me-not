@@ -1,9 +1,6 @@
 use task_reminder::scheduler::Scheduler;
 use task_reminder::setup_logger;
-use task_reminder::task_manager::{
-    manager::{read_tasks, TaskManager},
-    ClockType, Task,
-};
+use task_reminder::task_manager::{manager::TaskManager, ClockType, Task};
 
 use anyhow::{Context, Result};
 use tempfile::tempdir;
@@ -55,7 +52,8 @@ fn cancel_clock() -> Result<()> {
     let mut tm = TaskManager::new(&path, scheduler)?;
     let clock_type = ClockType::Period(Duration::seconds(1).unsigned_abs());
     let new_task = Task::new("".to_owned(), clock_type.clone());
-    let task_id = tm.add_task(new_task)?;
+    let task_id = new_task.task_id;
+    tm.add_task(new_task)?;
 
     sleep(std::time::Duration::from_secs(2));
 

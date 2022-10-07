@@ -1,16 +1,16 @@
-use crate::task_manager::{ClockType, Task};
+use crate::task_manager::{ClockType, Task, TaskID};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Request {
     Add(String, ClockType),
-    Cancel(usize),
+    Cancel(TaskID),
     Show,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
-    AddSuccess(usize),
+    AddSuccess,
     CancelSuccess,
     Fail(String),
     GetTasks(Vec<Task>),
