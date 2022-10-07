@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum Request {
     Add(String, ClockType),
     Cancel(usize),
+    // Show,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

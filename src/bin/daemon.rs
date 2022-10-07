@@ -13,7 +13,9 @@ fn main() -> Result<()> {
     task_reminder::setup_logger();
     let addr = env::var("REMINDER_DAEMON_ADDR").unwrap_or_else(|_| "127.0.0.1:8082".to_owned());
     let scheduler = Scheduler::new();
-    let tm = TaskManager::new("/home/wright/reminder", scheduler)?;
+    let path = env::var("REMINDER_TASK_STORE")
+        .unwrap_or_else(|_| format!("{}/reminder", env::var("HOME").unwrap()));
+    let tm = TaskManager::new(&path, scheduler)?;
     start_listen(&addr, tm)?;
     Ok(())
 }

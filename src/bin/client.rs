@@ -9,18 +9,30 @@ use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
 
 use task_reminder::comm::{Request, Response};
-use task_reminder::task_manager::ClockType;
+use task_reminder::task_manager::{read_tasks, ClockType};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about=None)]
 struct Cli {
-    description: String,
     #[command(subcommand)]
     command: Command,
 }
 
 #[derive(Subcommand)]
 enum Command {
+    Add {
+        description: String,
+        #[command(subcommand)]
+        command: AddCommand,
+    },
+    Rm {
+        index: usize,
+    },
+    Show,
+}
+
+#[derive(Subcommand)]
+enum AddCommand {
     After { duration: String },
     At { time: String },
     Per { duration: String },
@@ -28,22 +40,35 @@ enum Command {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let request = match &cli.command {
-        Command::At { time } => {
-            let next_fire = parse_at(time)?;
-            Request::Add(cli.description, ClockType::Once(next_fire))
-        }
-        Command::After { duration } => {
-            let duration = parse_duration(duration)?;
-            let next_fire = OffsetDateTime::now_utc() + duration;
-            Request::Add(cli.description, ClockType::Once(next_fire))
-        }
-        Command::Per { duration } => {
-            let duration = parse_duration(duration)?;
-            Request::Add(cli.description, ClockType::Period(duration))
+    let request = match cli.command {
+        Command::Add {
+            description,
+            command,
+        } => match &command {
+            AddCommand::At { time } => {
+                let next_fire = parse_at(time)?;
+                Request::Add(description, ClockType::Once(next_fire))
+            }
+            AddCommand::After { duration } => {
+                let duration = parse_duration(duration)?;
+                let next_fire = OffsetDateTime::now_local()? + duration;
+                Request::Add(description, ClockType::Once(next_fire))
+            }
+            AddCommand::Per { duration } => {
+                let duration = parse_duration(duration)?;
+                Request::Add(description, ClockType::Period(duration))
+            }
+        },
+        Command::Rm { index } => Request::Cancel(index),
+        Command::Show => {
+            let path = env::var("REMINDER_TASK_STORE")
+                .unwrap_or_else(|_| format!("{}/reminder", env::var("HOME").unwrap()));
+            show_tasks(&path)?;
+            return Ok(());
         }
     };
 
+    //println!("request is {:?}", request);
     let dest = env::var("REMINDER_DAEMON_ADDR").unwrap_or_else(|_| "127.0.0.1:8082".to_owned());
     match send_request(request.clone(), &dest) {
         Ok(response) => {
@@ -81,11 +106,13 @@ fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
                     // dbg!(component, m.as_str());
                     m.as_str()
                 })
-                .ok_or(anyhow!("invalid time! correct examples: 13:11:04, 23:01:59"))?
+                .ok_or(anyhow!(
+                    "invalid time! correct examples: 13:11:04, 23:01:59"
+                ))?
                 .parse()
                 .context(format!("invalid {}", component))?;
         }
-        let now = OffsetDateTime::now_utc();
+        let now = OffsetDateTime::now_local()?;
         let hour = components[0];
         let minute = components[1];
         let second = components[2];
@@ -112,7 +139,9 @@ fn parse_duration(duration: &str) -> Result<Duration> {
     )
     .unwrap();
     if !re.is_match(duration) {
-        return Err(anyhow!("invalid duration format; valid examples: 1d1h1m1s, 2h, 30s, 55m"));
+        return Err(anyhow!(
+            "invalid duration format; valid examples: 1d1h1m1s, 2h, 30s, 55m"
+        ));
     }
     if let Some(captures) = re.captures(duration) {
         let mut components = [0 as u64; 4];
@@ -134,6 +163,14 @@ fn parse_duration(duration: &str) -> Result<Duration> {
     } else {
         Ok(Duration::from_secs(0))
     }
+}
+
+fn show_tasks(path: &str) -> Result<()> {
+    let tasks = read_tasks(path)?;
+    for (i, task) in tasks.into_iter().enumerate() {
+        println!("{} {}", i, task);
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -167,12 +204,7 @@ mod tests {
 
     #[test]
     fn test_duration_err() {
-        let test_cases = vec![
-            "1f",
-            "abc",
-            "@341",
-            "1d2@3",
-        ];
+        let test_cases = vec!["1f", "abc", "@341", "1d2@3"];
         for duration in test_cases {
             //dbg!("testing {}", duration);
             assert!(parse_duration(duration).is_err());
@@ -202,12 +234,7 @@ mod tests {
 
     #[test]
     fn text_next_fire_err() {
-        let test_cases = vec![
-            "123:24",
-            "11:34",
-            "098",
-            "",
-        ];
+        let test_cases = vec!["123:24", "11:34", "098", ""];
         for next_fire in test_cases {
             assert!(parse_at(next_fire).is_err());
         }
