@@ -9,7 +9,7 @@ use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
 
 use task_reminder::comm::{Request, Response};
-use task_reminder::task_manager::ClockType;
+use task_reminder::task_manager::{prompt_task, ClockType};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about=None)]
@@ -68,8 +68,9 @@ fn main() -> Result<()> {
     match send_request(request.clone(), &dest) {
         Ok(response) => match response {
             Response::GetTasks(tasks) => {
-                for (i, task) in tasks.into_iter().enumerate() {
-                    println!("{} {}", i, task);
+                prompt_task();
+                for task in tasks {
+                    println!("{}", task);
                 }
             }
             _ => println!("success: {:?}", response),
