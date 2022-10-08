@@ -1,5 +1,5 @@
 # overview
-- a command-line task reminder sending desktop notifications for linux/macOS
+- fmn(forget-me-not) is a command-line task reminder sending desktop notifications for linux/macOS(M1, intel)
   - relying on [notify-rust](https://github.com/hoodie/notify-rust) it's cross-platform out of box
 - consisting of two executables, a client and a daemon
 - tasks are stored as a file for persistence
@@ -28,8 +28,10 @@ fmn show
 fmn rm <task_id>
 ```
 
-## daemon
+## daemon setup
 - for linux, you would need to deploy it via `systemd` or `initd`
-- for macOS, you would need to use launchd
+- for macOS, you would need to do the following
+    - for iterm2, change the alert settings via "Edit -> Marks and Annotations -> Alerts -> Alert on Next Mark"
+    - use `launchd` to deploy daemon so that it starts running on startup; see [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
 - fmn-daemon uses udp for listening
   - configure the port to use via env var `REMINDER_DAEMON_ADDR` (localhost:8082 by default)

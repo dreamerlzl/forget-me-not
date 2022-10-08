@@ -1,12 +1,12 @@
 use std::fmt::Display;
 use std::time::Duration;
 
+use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use serde_json::to_vec;
 use time::OffsetDateTime;
-use uuid::Uuid;
 
-pub type TaskID = Uuid;
+pub type TaskID = String;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
@@ -41,7 +41,8 @@ impl Task {
             description,
             clock_type,
             created_at: OffsetDateTime::now_utc(),
-            task_id: Uuid::new_v4(),
+            task_id: nanoid!(),
+            // task_id: Uuid::new_v4(),
         }
     }
 
@@ -54,8 +55,8 @@ impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{: <30} {: <15} {: <15}",
-            self.description, self.clock_type, self.created_at
+            "{:8} {: <15} {: <15} {: <15}",
+            self.task_id, self.description, self.clock_type, self.created_at
         )
     }
 }

@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use serde_json::{from_slice, to_string};
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 use std::env;
 use std::net::{Ipv4Addr, UdpSocket};
@@ -60,9 +59,7 @@ fn main() -> Result<()> {
                 Request::Add(description, ClockType::Period(duration))
             }
         },
-        Command::Rm { task_id } => {
-            Request::Cancel(Uuid::parse_str(&task_id).context("pls provide the complete task id")?)
-        }
+        Command::Rm { task_id } => Request::Cancel(task_id),
         Command::Show => Request::Show,
     };
 
