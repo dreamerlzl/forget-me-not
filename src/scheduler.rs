@@ -13,7 +13,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 
-const SUMMARY: &str = "task-reminder";
+const SUMMARY: &str = "forget-me-not";
 
 pub struct Scheduler {
     task_sender: mpsc::Sender<SchedulerCommand>,
