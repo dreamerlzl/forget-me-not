@@ -97,10 +97,10 @@ fn send_request(request: Request, dest: &str) -> Result<Response> {
 
 // only used for at
 fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
-    let re = Regex::new(r"(?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+)").unwrap();
+    let re = Regex::new(r"(?P<hour>\d+):(?P<minute>\d+)").unwrap();
     let mut components = [0 as u8; 3];
     if let Some(captures) = re.captures(next_fire) {
-        for (i, component) in ["hour", "minute", "second"].into_iter().enumerate() {
+        for (i, component) in ["hour", "minute"].into_iter().enumerate() {
             components[i] = captures
                 .name(component)
                 .map(|m| {
@@ -116,18 +116,12 @@ fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
         let now = OffsetDateTime::now_local()?;
         let hour = components[0];
         let minute = components[1];
-        let second = components[2];
-        //if (components[0], components[1], components[2]) < (now.hour(), now.minute(), now.second())
-        //{
-        //    return Err(anyhow!("next_fire should not be in the past!"));
-        //}
         Ok(now
             .replace_millisecond(0)?
             .replace_nanosecond(0)?
             .replace_microsecond(0)?
             .replace_hour(hour)?
-            .replace_minute(minute)?
-            .replace_second(second)?)
+            .replace_minute(minute)?)
     } else {
         Err(anyhow!("fail to parse next_fire!"))
     }
