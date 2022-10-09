@@ -35,3 +35,17 @@ fmn rm <task_id>
     - use `launchd` to deploy daemon so that it starts running on startup; see [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
 - fmn-daemon uses udp for listening
   - configure the port to use via env var `REMINDER_DAEMON_ADDR` (localhost:8082 by default)
+- if you don't want to setup a keep-alive daemon, you could just `nohup fmn-deamon &> path/to/log &`
+
+# notification media
+- An image(only linux) and a sound(linux/mac) could be attached to each notification by providing the env vars when launching the `fmn-deamon`
+  - `REMINDER_IMAGE_PATH` 
+  - `REMINDER_SOUND_PATH` 
+- on macOS, the built-in `/usr/bin/afplay` would be used to play the sound
+- on Linux, `cvlc` would be used so users need to manually install `vlc` beforehand
+
+# roadmap
+- support specifying X for each notification
+  - sound
+  - image
+- support at per day
