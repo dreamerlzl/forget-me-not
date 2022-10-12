@@ -33,9 +33,17 @@ enum Command {
 
 #[derive(Subcommand)]
 enum AddCommand {
-    After { duration: String },
-    At { time: String },
-    Per { duration: String },
+    After {
+        duration: String,
+    },
+    At {
+        time: String,
+        #[arg(short, long)]
+        per_day: bool,
+    },
+    Per {
+        duration: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -45,9 +53,16 @@ fn main() -> Result<()> {
             description,
             command,
         } => match &command {
-            AddCommand::At { time } => {
+            AddCommand::At { time, per_day } => {
                 let next_fire = parse_at(time)?;
-                Request::Add(description, ClockType::Once(next_fire))
+                if *per_day {
+                    Request::Add(
+                        description,
+                        ClockType::OncePerDay(next_fire.hour(), next_fire.minute()),
+                    )
+                } else {
+                    Request::Add(description, ClockType::Once(next_fire))
+                }
             }
             AddCommand::After { duration } => {
                 let duration = parse_duration(duration)?;
