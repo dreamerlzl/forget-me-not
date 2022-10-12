@@ -19,6 +19,7 @@ pub struct Task {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ClockType {
     Once(OffsetDateTime),
+    OncePerDay(u8, u8), // hour(0-24), minute(0-59)
     Period(Duration),
 }
 
@@ -38,6 +39,9 @@ impl Display for ClockType {
             }
             ClockType::Period(period) => {
                 write!(f, "every {} secs", period.as_secs())
+            }
+            ClockType::OncePerDay(hour, minute) => {
+                write!(f, "{}:{} everyday", hour, minute)
             }
         }
     }
