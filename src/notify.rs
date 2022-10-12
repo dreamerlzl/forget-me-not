@@ -39,7 +39,7 @@ fn play_sound(sound_path: &str) {
 }
 
 #[cfg(target_os = "macos")]
-fn add_image(notification: &mut Notification, image_path: &str) {
+fn add_image(_notification: &mut Notification, _image_path: &str) {
     info!("macOS doesn't support attach images to notifications");
 }
 
