@@ -3,13 +3,16 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use serde_json::{from_slice, to_string};
 use time::OffsetDateTime;
+#[macro_use]
+extern crate prettytable;
+use prettytable::Table;
 
 use std::env;
 use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
 
 use task_reminder::comm::{Request, Response};
-use task_reminder::task_manager::{prompt_task, ClockType};
+use task_reminder::task_manager::ClockType;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about=None)]
@@ -83,10 +86,12 @@ fn main() -> Result<()> {
     match send_request(request.clone(), &dest) {
         Ok(response) => match response {
             Response::GetTasks(tasks) => {
-                prompt_task();
+                let mut table = Table::new();
+                table.add_row(row!["ID", "TYPE", "DESCRIPTION"]);
                 for task in tasks {
-                    println!("{}", task);
+                    table.add_row(row![task.task_id, task.clock_type, task.description]);
                 }
+                table.printstd();
             }
             _ => println!("success: {:?}", response),
         },
