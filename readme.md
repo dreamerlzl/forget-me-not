@@ -21,6 +21,15 @@ fmn add "hello world" per 1h
 # remind me at 19:30 today (assuming it's in the future)
 fmn add "foo bar" at 19:30
 
+# remind me at 19:30 everyday
+fmn add "foo bar" at 19:30 --per-day
+
+# remind with a sound
+fmn add -s ~/Downloads/song.mp3 "chill" at 8:00 --per-day
+
+# remind with an image (only available on kde plasma)
+fmn add -i ~/Downloads/picture.png "chill" after 10h
+
 # show all reminder tasks
 fmn show
 
@@ -38,14 +47,10 @@ fmn rm <task_id>
 - if you don't want to setup a keep-alive daemon, you could just `nohup fmn-deamon &> path/to/log &`
 
 # notification media
-- An image(only linux) and a sound(linux/mac) could be attached to each notification by providing the env vars when launching the `fmn-deamon`
-  - `REMINDER_IMAGE_PATH` 
-  - `REMINDER_SOUND_PATH` 
+- An image(only linux) and a sound(linux/mac) could be attached to every notification by providing the env vars when running `fmn`
+  - `FMN_IMAGE_PATH` 
+  - `FMN_SOUND_PATH` 
+  - **note: when you configure these variables in files like `~/.bash_profile` or `~/.config/fish/config.fish`, please use the full path!**
+  - `fmn add -i` and `fmn add -s` would have higher priority; these two env vars could be the defaults
 - on macOS, the built-in `/usr/bin/afplay` would be used to play the sound
 - on Linux, `cvlc` would be used so users need to manually install `vlc` beforehand
-
-# roadmap
-- support specifying X for each notification
-  - sound
-  - image
-- support at per day

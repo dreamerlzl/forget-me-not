@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Request {
-    Add(String, ClockType),
+    Add(String, ClockType, Option<String>, Option<String>),
     Cancel(TaskID),
     Show,
 }
