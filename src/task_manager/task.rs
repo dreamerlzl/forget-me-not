@@ -14,6 +14,10 @@ pub struct Task {
     pub description: String,
     pub task_id: TaskID, // used as the unique id of the task
     pub clock_type: ClockType,
+
+    // media shown when the notification fires
+    image_path: Option<String>,
+    sound_path: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -54,8 +58,26 @@ impl Task {
             clock_type,
             created_at: OffsetDateTime::now_utc(),
             task_id: nanoid!(),
+            image_path: None,
+            sound_path: None,
             // task_id: Uuid::new_v4(),
         }
+    }
+
+    pub fn add_image(&mut self, image_path: String) {
+        self.image_path = Some(image_path);
+    }
+
+    pub fn add_sound(&mut self, sound_path: String) {
+        self.sound_path = Some(sound_path);
+    }
+
+    pub fn get_image(&self) -> Option<&str> {
+        self.image_path.as_deref()
+    }
+
+    pub fn get_sound(&self) -> Option<&str> {
+        self.sound_path.as_deref()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

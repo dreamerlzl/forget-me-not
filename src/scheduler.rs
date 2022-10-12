@@ -130,18 +130,16 @@ impl InnerScheduler {
     }
 
     pub fn add_task(&mut self, task: Task) {
-        let task_id = task.task_id;
-        let clock_type = task.clock_type;
-        let description = task.description;
+        // we finally need to insert task_id as a key so it's fine to clone here
+        let task_id = task.task_id.clone();
+        let clock_type = task.clock_type.clone();
         info!("add new clock task: {}, {}", task_id, clock_type);
         let (sender, receiver) = broadcast::channel(1);
         // enter the tokio rt context so that we can use tokio::spawn
         match clock_type {
-            ClockType::Once(next_fire) => {
-                tokio::spawn(once_clock(description, next_fire, receiver))
-            }
+            ClockType::Once(next_fire) => tokio::spawn(once_clock(task, next_fire, receiver)),
             ClockType::Period(period) => {
-                tokio::spawn(period_clock(description, period, sender.clone(), receiver))
+                tokio::spawn(period_clock(task, period, sender.clone(), receiver))
             }
             ClockType::OncePerDay(hour, minute) => {
                 let (hour_diff, minute_diff, _) = self.tzdiff.clone().as_hms();
@@ -159,9 +157,14 @@ impl InnerScheduler {
                         if (now_hour as u8, now_minute as u8) == (hour, minute) {
                             info!(
                                 "a clock at {}:{} everyday and description {} fire!",
-                                hour, minute, &description
+                                hour, minute, &task.description
                             );
-                            if let Err(e) = desktop_notification(SUMMARY, &description) {
+                            if let Err(e) = desktop_notification(
+                                SUMMARY,
+                                &task.description,
+                                task.get_image(),
+                                task.get_sound(),
+                            ) {
                                 error!("fail to send de notification: {}", e);
                                 sender
                                     .send(TaskCommand::Stop)
@@ -193,7 +196,7 @@ impl InnerScheduler {
 }
 
 async fn period_clock(
-    description: String,
+    task: Task,
     period: Duration,
     sender: broadcast::Sender<TaskCommand>,
     receiver: broadcast::Receiver<TaskCommand>,
@@ -208,9 +211,14 @@ async fn period_clock(
             info!(
                 "a clock with period {} and description {} fire!",
                 period.as_secs(),
-                &description
+                &task.description
             );
-            if let Err(e) = desktop_notification(SUMMARY, &description) {
+            if let Err(e) = desktop_notification(
+                SUMMARY,
+                &task.description,
+                task.get_image(),
+                task.get_sound(),
+            ) {
                 error!("fail to send de notification: {}", e);
                 sender
                     .send(TaskCommand::Stop)
@@ -246,7 +254,7 @@ async fn period_do<F1, F2>(
 }
 
 async fn once_clock(
-    description: String,
+    task: Task,
     next_fire: OffsetDateTime,
     mut receiver: broadcast::Receiver<TaskCommand>,
 ) {
@@ -268,7 +276,7 @@ async fn once_clock(
         }
         _ = sleep(duration) => {
             info!("a clock fire!");
-            if let Err(e) = desktop_notification(SUMMARY, &description) {
+            if let Err(e) = desktop_notification(SUMMARY, &task.description, task.get_image(), task.get_sound()) {
                 error!("fail to send notification: {}", e);
             }
         }

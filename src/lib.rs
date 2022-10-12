@@ -8,7 +8,7 @@ use env_logger::Env;
 use log::debug;
 
 pub fn setup_logger() {
-    let env = Env::default().filter_or("REMINDER_DAEMON_LOG_LEVEL", "debug");
+    let env = Env::default().filter_or("FMN_DAEMON_LOG_LEVEL", "debug");
     env_logger::init_from_env(env);
     debug!("logger start");
 }
