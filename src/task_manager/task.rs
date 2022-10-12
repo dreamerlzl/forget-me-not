@@ -31,17 +31,17 @@ impl Display for ClockType {
             ClockType::Once(next_fire) => {
                 write!(
                     f,
-                    "at {}",
+                    "once {}",
                     next_fire
                         .format(&format)
                         .expect("fail to display custom OffsetDatetime format")
                 )
             }
             ClockType::Period(period) => {
-                write!(f, "every {} secs", period.as_secs())
+                write!(f, "every {}", period.as_secs())
             }
             ClockType::OncePerDay(hour, minute) => {
-                write!(f, "{}:{} everyday", hour, minute)
+                write!(f, "everyday {}:{}", hour, minute)
             }
         }
     }
@@ -60,25 +60,5 @@ impl Task {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         to_vec(self).expect(&format!("fail to serialize task {:?}", &self))
-    }
-}
-
-macro_rules! my_format {
-    (task) => {
-        "{: <22} {: <19} {:}"
-    };
-}
-
-pub fn prompt_task() {
-    println!(my_format!(task), "task_id", "clock", "description");
-}
-
-impl Display for Task {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            my_format!(task),
-            self.task_id, self.clock_type, self.description,
-        )
     }
 }
