@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::time::Duration;
 
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
@@ -24,7 +23,7 @@ pub struct Task {
 pub enum ClockType {
     Once(OffsetDateTime),
     OncePerDay(u8, u8), // hour(0-24), minute(0-59)
-    Period(Duration),
+    Period(String),
 }
 
 impl Display for ClockType {
@@ -42,7 +41,7 @@ impl Display for ClockType {
                 )
             }
             ClockType::Period(period) => {
-                write!(f, "every {}", period.as_secs())
+                write!(f, "every {}", &period)
             }
             ClockType::OncePerDay(hour, minute) => {
                 write!(f, "everyday {}:{}", hour, minute)
