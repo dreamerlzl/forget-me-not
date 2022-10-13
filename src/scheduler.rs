@@ -1,3 +1,4 @@
+use crate::comm::parse_duration;
 use crate::notify::desktop_notification;
 use crate::task_manager::{ClockType, Task, TaskID};
 
@@ -139,7 +140,9 @@ impl InnerScheduler {
         match clock_type {
             ClockType::Once(next_fire) => tokio::spawn(once_clock(task, next_fire, receiver)),
             ClockType::Period(period) => {
-                tokio::spawn(period_clock(task, period, sender.clone(), receiver))
+                let duration = parse_duration(&period)
+                    .expect("this shall have been verified by the client side");
+                tokio::spawn(period_clock(task, duration, sender.clone(), receiver))
             }
             ClockType::OncePerDay(hour, minute) => {
                 let (hour_diff, minute_diff, _) = self.tzdiff.clone().as_hms();

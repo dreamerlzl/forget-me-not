@@ -9,9 +9,8 @@ use prettytable::Table;
 
 use std::env;
 use std::net::{Ipv4Addr, UdpSocket};
-use std::time::Duration;
 
-use task_reminder::comm::{Request, Response};
+use task_reminder::comm::{parse_duration, Request, Response};
 use task_reminder::task_manager::ClockType;
 
 #[derive(Parser)]
@@ -64,22 +63,22 @@ fn main() -> Result<()> {
             mut image_path,
             mut sound_path,
         } => {
-            let clock_type = match &command {
+            let clock_type = match command {
                 AddCommand::At { time, per_day } => {
-                    let next_fire = parse_at(time)?;
-                    if *per_day {
+                    let next_fire = parse_at(&time)?;
+                    if per_day {
                         ClockType::OncePerDay(next_fire.hour(), next_fire.minute())
                     } else {
                         ClockType::Once(next_fire)
                     }
                 }
                 AddCommand::After { duration } => {
-                    let duration = parse_duration(duration)?;
+                    let duration = parse_duration(&duration)?;
                     let next_fire = OffsetDateTime::now_local()? + duration;
                     ClockType::Once(next_fire)
                 }
                 AddCommand::Per { duration } => {
-                    let duration = parse_duration(duration)?;
+                    let _ = parse_duration(&duration)?;
                     ClockType::Period(duration)
                 }
             };
@@ -162,39 +161,6 @@ fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
             .replace_minute(minute)?)
     } else {
         Err(anyhow!("fail to parse next_fire!"))
-    }
-}
-
-// duration looks like this 1d1h1m1s
-fn parse_duration(duration: &str) -> Result<Duration> {
-    let re = Regex::new(
-        r"^(?:(?P<day>\d+)d)?(?:(?P<hour>\d+)h)?(?:(?P<minute>\d+)m)?(?:(?P<second>\d+)s)?$",
-    )
-    .unwrap();
-    if !re.is_match(duration) {
-        return Err(anyhow!(
-            "invalid duration format; valid examples: 1d1h1m1s, 2h, 30s, 55m"
-        ));
-    }
-    if let Some(captures) = re.captures(duration) {
-        let mut components = [0 as u64; 4];
-        for (i, component) in ["day", "hour", "minute", "second"].into_iter().enumerate() {
-            components[i] = captures
-                .name(component)
-                .map(|m| {
-                    // dbg!(component, m.as_str());
-                    m.as_str()
-                })
-                .unwrap_or_else(|| "0")
-                .parse()
-                .context(format!("invalid {}", component))?;
-        }
-
-        let secs =
-            components[0] * 3600 * 24 + components[1] * 3600 + components[2] * 60 + components[3];
-        Ok(Duration::from_secs(secs))
-    } else {
-        Ok(Duration::from_secs(0))
     }
 }
 
