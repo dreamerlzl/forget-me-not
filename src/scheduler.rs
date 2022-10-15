@@ -258,16 +258,18 @@ async fn period_do<F1, F2>(
 
 async fn once_clock(
     task: Task,
-    next_fire: OffsetDateTime,
+    mut next_fire: OffsetDateTime,
     mut receiver: broadcast::Receiver<TaskCommand>,
 ) {
     let now = OffsetDateTime::now_utc();
     if now >= next_fire {
         warn!(
-            "clock next_fire time {} shouldn't be in the past!",
+            "clock next_fire time {} shouldn't be in the past! would reschedule it tomorrow",
             next_fire
         );
-        return;
+        next_fire = next_fire
+            .replace_day(now.day() + 1)
+            .expect("fail to reschedule the next day");
     }
     let duration = (next_fire - now).unsigned_abs();
     tokio::select! {
