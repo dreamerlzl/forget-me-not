@@ -74,6 +74,9 @@ fn main() -> Result<()> {
                 }
                 AddCommand::After { duration } => {
                     let duration = parse_duration(&duration)?;
+                    if duration.as_secs() == 0 {
+                        return Err(anyhow!("after <duration> should not be 0"));
+                    }
                     let next_fire = OffsetDateTime::now_local()? + duration;
                     ClockType::Once(next_fire)
                 }
