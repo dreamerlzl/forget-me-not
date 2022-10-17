@@ -5,6 +5,7 @@ use serde_json::{from_slice, to_string};
 use time::OffsetDateTime;
 #[macro_use]
 extern crate prettytable;
+use log::warn;
 use prettytable::Table;
 
 use std::env;
@@ -156,12 +157,23 @@ fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
         let now = OffsetDateTime::now_local()?;
         let hour = components[0];
         let minute = components[1];
-        Ok(now
+        let mut next_fire = now
             .replace_millisecond(0)?
             .replace_nanosecond(0)?
             .replace_microsecond(0)?
             .replace_hour(hour)?
-            .replace_minute(minute)?)
+            .replace_minute(minute)?;
+
+        if now >= next_fire {
+            warn!(
+                "clock next_fire time {} shouldn't be in the past! would reschedule it tomorrow",
+                next_fire
+            );
+            next_fire = next_fire
+                .replace_day(now.day() + 1)
+                .expect("fail to reschedule the next day");
+        }
+        Ok(next_fire)
     } else {
         Err(anyhow!("fail to parse next_fire!"))
     }
