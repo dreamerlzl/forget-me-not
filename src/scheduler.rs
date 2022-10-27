@@ -15,6 +15,8 @@ use tokio::sync::mpsc;
 use tokio::time::sleep;
 
 const SUMMARY: &str = "forget-me-not";
+const CONSTANT_WAKUP_SECS: u64 = 30; // a task wake up periodically to check whether the time has
+                                     // passed, in case that the host goes to sleep
 
 pub struct Scheduler {
     task_sender: mpsc::Sender<SchedulerCommand>,
@@ -137,15 +139,49 @@ impl InnerScheduler {
         info!("add new clock task: {}, {}", task_id, clock_type);
         let (sender, receiver) = broadcast::channel(1);
         // enter the tokio rt context so that we can use tokio::spawn
+        let (hour_diff, minute_diff, _) = self.tzdiff.clone().as_hms();
         match clock_type {
-            ClockType::Once(next_fire) => tokio::spawn(once_clock(task, next_fire, receiver)),
+            ClockType::Once(next_fire) => {
+                let sender = sender.clone();
+                let hour = next_fire.hour();
+                let minute = next_fire.minute();
+                let now = OffsetDateTime::now_utc();
+                let duration = (next_fire - now).whole_seconds() as u64;
+                let period = CONSTANT_WAKUP_SECS.min(duration);
+                tokio::spawn(period_do(
+                    Duration::from_secs(period),
+                    receiver,
+                    move || info!("once task at {} is cancelled!", next_fire),
+                    move || {
+                        let now = OffsetDateTime::now_utc();
+                        let now_hour = now.hour() as i8 + hour_diff;
+                        let now_minute = now.minute() as i8 + minute_diff;
+                        if (now_hour as u8, now_minute as u8) >= (hour, minute) {
+                            info!(
+                                "a once clock at {}:{} and description {} fire!",
+                                hour, minute, &task.description
+                            );
+                            if let Err(e) = desktop_notification(
+                                SUMMARY,
+                                &task.description,
+                                task.get_image(),
+                                task.get_sound(),
+                            ) {
+                                error!("fail to send de notification: {}", e);
+                            }
+                            sender
+                                .send(TaskCommand::Stop)
+                                .expect("fail to stop after de notify err");
+                        }
+                    },
+                ))
+            }
             ClockType::Period(period) => {
                 let duration = parse_duration(&period)
                     .expect("this shall have been verified by the client side");
                 tokio::spawn(period_clock(task, duration, sender.clone(), receiver))
             }
             ClockType::OncePerDay(hour, minute) => {
-                let (hour_diff, minute_diff, _) = self.tzdiff.clone().as_hms();
                 let sender = sender.clone();
                 tokio::spawn(period_do(
                     Duration::from_secs(60),
@@ -256,35 +292,35 @@ async fn period_do<F1, F2>(
     }
 }
 
-async fn once_clock(
-    task: Task,
-    next_fire: OffsetDateTime,
-    mut receiver: broadcast::Receiver<TaskCommand>,
-) {
-    let now = OffsetDateTime::now_utc();
-    if now >= next_fire {
-        error!(
-            "clock next_fire time {} shouldn't be in the past! would reschedule it tomorrow",
-            next_fire
-        );
-        return;
-    }
-    let duration = (next_fire - now).unsigned_abs();
-    tokio::select! {
-        val = receiver.recv() => {
-            if is_canceled(val) {
-                info!("once clock with next_fire {:?} is cancelled!", next_fire);
-                return
-            }
-        }
-        _ = sleep(duration) => {
-            info!("a clock fire!");
-            if let Err(e) = desktop_notification(SUMMARY, &task.description, task.get_image(), task.get_sound()) {
-                error!("fail to send notification: {}", e);
-            }
-        }
-    }
-}
+// async fn once_clock(
+//     task: Task,
+//     next_fire: OffsetDateTime,
+//     mut receiver: broadcast::Receiver<TaskCommand>,
+// ) {
+//     let now = OffsetDateTime::now_utc();
+//     if now >= next_fire {
+//         error!(
+//             "clock next_fire time {} shouldn't be in the past! would reschedule it tomorrow",
+//             next_fire
+//         );
+//         return;
+//     }
+//     let duration = (next_fire - now).unsigned_abs();
+//     tokio::select! {
+//         val = receiver.recv() => {
+//             if is_canceled(val) {
+//                 info!("once clock with next_fire {:?} is cancelled!", next_fire);
+//                 return
+//             }
+//         }
+//         _ = sleep(duration) => {
+//             info!("a clock fire!");
+//             if let Err(e) = desktop_notification(SUMMARY, &task.description, task.get_image(), task.get_sound()) {
+//                 error!("fail to send notification: {}", e);
+//             }
+//         }
+//     }
+// }
 
 fn is_canceled(val: std::result::Result<TaskCommand, RecvError>) -> bool {
     match val {
