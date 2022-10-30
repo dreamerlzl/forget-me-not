@@ -1,0 +1,20 @@
+# place this file under ~/.config/systemd/user/
+# and do the following
+# systemctl --user daemon-reload
+# systemctl --user enable fmn
+# systemctl --user start fmn
+
+[Unit]
+Description=forget-me-not
+After=network.target sound.target
+
+[Service]
+Type=simple
+ExecStart= # path to fmn-daemon
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=fmn
+
+[Install]
+WantedBy=default.target

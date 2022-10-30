@@ -39,6 +39,8 @@ fmn rm <task_id>
 
 ## daemon setup
 - for linux, you would need to deploy it via `systemd` or `initd`
+    - for an example of user-level systemd, check `misc/fmn.service`
+    - you would need to provide a value for `ExecStart` to specify the path to `fmn-daemon`
 - for macOS, you would need to do the following
     - for iterm2, change the alert settings via "Edit -> Marks and Annotations -> Alerts -> Alert on Next Mark"
     - use `launchd` to deploy daemon so that it starts running on startup; see [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
