@@ -36,6 +36,7 @@ enum SchedulerCommand {
 #[derive(Clone, Debug)]
 enum TaskCommand {
     Stop,
+    Cancel,
 }
 
 impl Scheduler {
@@ -151,12 +152,14 @@ impl InnerScheduler {
                 tokio::spawn(period_do(
                     Duration::from_secs(period),
                     receiver,
-                    move || info!("once task at {} is cancelled!", next_fire),
+                    move || info!("once task at {} is removed!", next_fire),
                     move || {
                         let now = OffsetDateTime::now_utc();
                         let now_hour = now.hour() as i8 + hour_diff;
                         let now_minute = now.minute() as i8 + minute_diff;
-                        if (now_hour as u8, now_minute as u8) >= (hour, minute) {
+                        if (now_hour as u8, now_minute as u8) >= (hour, minute)
+                            && now_minute <= minute + 1
+                        {
                             info!(
                                 "a once clock at {}:{} and description {} fire!",
                                 hour, minute, &task.description
@@ -187,7 +190,7 @@ impl InnerScheduler {
                     Duration::from_secs(60),
                     receiver,
                     move || {
-                        info!("everyday task at {}:{} is cancelled!", hour, minute);
+                        info!("everyday task at {}:{} is removed!", hour, minute);
                     },
                     move || {
                         let now = OffsetDateTime::now_utc();
@@ -221,7 +224,7 @@ impl InnerScheduler {
         let task_id = task.task_id;
         if let Some(sender) = self.cancel_channels.get(&task_id) {
             if let Err(e) = sender
-                .send(TaskCommand::Stop)
+                .send(TaskCommand::Cancel)
                 .context("fail to send stop to clock")
             {
                 // no active receivers
@@ -244,7 +247,7 @@ async fn period_clock(
         period,
         receiver,
         || {
-            info!("periodic task with period {:?} is cancelled!", period);
+            info!("periodic task with period {:?} is removed!", period);
         },
         || {
             info!(
@@ -280,7 +283,7 @@ async fn period_do<F1, F2>(
     loop {
         tokio::select! {
             val = receiver.recv() => {
-                if is_canceled(val) {
+                if is_removed(val) {
                     after_cancel();
                     return
                 }
@@ -309,7 +312,7 @@ async fn period_do<F1, F2>(
 //     tokio::select! {
 //         val = receiver.recv() => {
 //             if is_canceled(val) {
-//                 info!("once clock with next_fire {:?} is cancelled!", next_fire);
+//                 info!("once clock with next_fire {:?} is removed!", next_fire);
 //                 return
 //             }
 //         }
@@ -322,10 +325,11 @@ async fn period_do<F1, F2>(
 //     }
 // }
 
-fn is_canceled(val: std::result::Result<TaskCommand, RecvError>) -> bool {
+fn is_removed(val: std::result::Result<TaskCommand, RecvError>) -> bool {
     match val {
         Ok(command) => match command {
             TaskCommand::Stop => true,
+            TaskCommand::Cancel => true,
         },
         Err(e) => {
             error!("fail to receive command: {}", e);
