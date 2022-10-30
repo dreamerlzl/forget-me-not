@@ -53,4 +53,4 @@ fmn rm <task_id>
   - **note: when you configure these variables in files like `~/.bash_profile` or `~/.config/fish/config.fish`, please use the full path!**
   - `fmn add -i` and `fmn add -s` would have higher priority; these two env vars could be the defaults
 - on macOS, the built-in `/usr/bin/afplay` would be used to play the sound
-- on Linux, `cvlc` would be used so users need to manually install `vlc` beforehand
+- on Linux, `paplay` would be used to play audio

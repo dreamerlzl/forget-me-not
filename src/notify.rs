@@ -37,10 +37,7 @@ fn add_image(notification: &mut Notification, image_path: &str) {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn play_sound(sound_path: &str) -> Result<()> {
-    Command::new("cvlc")
-        .arg("--play-and-exit")
-        .arg(sound_path)
-        .spawn()?;
+    Command::new("paplay").arg(sound_path).spawn()?;
     Ok(())
 }
 
