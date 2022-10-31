@@ -158,7 +158,7 @@ impl InnerScheduler {
                         let now_hour = now.hour() as i8 + hour_diff;
                         let now_minute = now.minute() as i8 + minute_diff;
                         if (now_hour as u8, now_minute as u8) >= (hour, minute)
-                            && now_minute <= minute + 1
+                            && now_minute - minute as i8 <= 1
                         {
                             info!(
                                 "a once clock at {}:{} and description {} fire!",
@@ -282,6 +282,8 @@ async fn period_do<F1, F2>(
 {
     loop {
         tokio::select! {
+            biased;
+
             val = receiver.recv() => {
                 if is_removed(val) {
                     after_cancel();
