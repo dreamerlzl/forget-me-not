@@ -33,7 +33,7 @@ fn periodic_clock() -> Result<()> {
     let path = dir.path().join("empty");
     let scheduler = Scheduler::new();
     let mut tm = TaskManager::new(&path, scheduler)?;
-    let clock_type = ClockType::Period(Duration::seconds(1).unsigned_abs());
+    let clock_type = ClockType::Period("1s".to_owned());
     let new_task = Task::new("".to_owned(), clock_type.clone());
     tm.add_task(new_task)?;
 
@@ -50,9 +50,9 @@ fn cancel_clock() -> Result<()> {
     let path = dir.path().join("empty");
     let scheduler = Scheduler::new();
     let mut tm = TaskManager::new(&path, scheduler)?;
-    let clock_type = ClockType::Period(Duration::seconds(1).unsigned_abs());
+    let clock_type = ClockType::Period("1s".to_owned());
     let new_task = Task::new("".to_owned(), clock_type.clone());
-    let task_id = new_task.task_id;
+    let task_id = new_task.task_id.clone();
     tm.add_task(new_task)?;
 
     sleep(std::time::Duration::from_secs(2));

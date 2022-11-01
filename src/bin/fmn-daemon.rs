@@ -4,10 +4,12 @@ use task_reminder::task_manager::{Task, TaskManager};
 
 use anyhow::{Context, Result};
 use log::{error, info};
-use serde_json::{from_slice, to_string};
+use serde_json::{to_string, Deserializer};
 
 use std::env;
-use std::{net::UdpSocket, path::Path};
+use std::io::{BufReader, BufWriter, Write};
+use std::net::TcpListener;
+use std::{net::TcpStream, path::Path};
 
 fn main() -> Result<()> {
     task_reminder::setup_logger();
@@ -21,17 +23,19 @@ fn main() -> Result<()> {
 }
 
 fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()> {
-    let socket = UdpSocket::bind(addr).context("fail to create udp server socket")?;
-    let mut buf = [0; 1024];
-    loop {
-        let (amt, src) = socket
-            .recv_from(&mut buf)
-            .context("fail to receive udp packet")?;
+    let listener = TcpListener::bind(addr).context("fail to create udp server socket")?;
+    for stream in listener.incoming() {
+        serve(stream?, &mut tm)?;
+    }
+    Ok(())
+}
 
-        let request: Request = from_slice(&buf[..amt]).context(format!(
-            "fail to deserialize a udp request {:?}",
-            &buf[..amt]
-        ))?;
+fn serve<P: AsRef<Path>>(stream: TcpStream, tm: &mut TaskManager<P>) -> Result<()> {
+    let reader = BufReader::new(&stream);
+    let mut writer = BufWriter::new(&stream);
+    let requests = Deserializer::from_reader(reader).into_iter::<Request>();
+    for request in requests {
+        let request = request?;
         let response = if let Err(e) = tm.refresh() {
             error!("fail to refresh task store: {}", e);
             Response::Fail(format!("fail to refresh task store: {}", e))
@@ -65,7 +69,7 @@ fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()
             }
         };
         let serialized = to_string(&response).expect("fail to serialize response");
-        match socket.send_to(serialized.as_bytes(), &src) {
+        match writer.write_all(serialized.as_bytes()) {
             Ok(_) => {
                 info!("successful response: {}", serialized);
             }
@@ -73,5 +77,9 @@ fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()
                 error!("fail to send back response: {}", e);
             }
         }
+        writer
+            .flush()
+            .context("fail to flush fmn-daemon tcp writer")?;
     }
+    Ok(())
 }
