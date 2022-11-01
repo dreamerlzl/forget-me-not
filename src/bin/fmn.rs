@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
 use regex::Regex;
-use serde_json::{from_slice, to_string};
+use serde::Deserialize;
+use serde_json::{to_string, Deserializer};
 use time::OffsetDateTime;
 #[macro_use]
 extern crate prettytable;
@@ -9,7 +10,8 @@ use log::warn;
 use prettytable::Table;
 
 use std::env;
-use std::net::{Ipv4Addr, UdpSocket};
+use std::io::{BufReader, Write};
+use std::net::TcpStream;
 
 use task_reminder::comm::{parse_duration, Request, Response};
 use task_reminder::task_manager::ClockType;
@@ -117,22 +119,23 @@ fn main() -> Result<()> {
             _ => println!("success: {:?}", response),
         },
         Err(e) => {
-            println!("fail to remind task {:?}: {}", request, e);
+            println!("request \"{:?}\" failed: {}", request, e);
         }
     }
     Ok(())
 }
 
 fn send_request(request: Request, dest: &str) -> Result<Response> {
-    let socket =
-        UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).context("fail to bind to a random port")?;
+    let mut stream = TcpStream::connect(dest).context("fail to connect to fmn-deamon")?;
     let serialized = to_string(&request).expect("fail to serialize request");
-    socket
-        .send_to(serialized.as_bytes(), dest)
-        .context(format!("fail to send to {}", dest))?;
-    let mut buf = [0; 1024];
-    let amt = socket.recv(&mut buf)?;
-    let response: Response = from_slice(&buf[..amt]).context("fail to deserialize response")?;
+    stream
+        .write_all(serialized.as_bytes())
+        .context("fail to send requests to fmn-daemon")?;
+
+    // receive response
+    let mut reader = Deserializer::from_reader(BufReader::new(stream.try_clone()?));
+    let response: Response =
+        Response::deserialize(&mut reader).context("fail to deserialize response")?;
     Ok(response)
 }
 
