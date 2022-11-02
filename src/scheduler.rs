@@ -1,4 +1,4 @@
-use crate::comm::parse_duration;
+use crate::comm::{get_tzdiff, parse_duration};
 use crate::notify::desktop_notification;
 use crate::task_manager::{ClockType, Task, TaskID};
 
@@ -41,10 +41,8 @@ enum TaskCommand {
 
 impl Scheduler {
     pub fn new() -> Self {
-        let tzdiff =
-            UtcOffset::current_local_offset().expect("fail to get local timezone difference");
-        // if we use multi-threaded runtime, time-rs or chrono's now method is not reliable
         let (sender, receiver) = mpsc::channel(8);
+        let tzdiff = get_tzdiff();
         std::thread::spawn(
             move || match Builder::new_current_thread().enable_all().build() {
                 Ok(rt) => {
