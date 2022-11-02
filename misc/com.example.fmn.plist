@@ -1,0 +1,52 @@
+<!-- Put this file under $HOME/Library/LaunchAgents -->
+<!-- launchctl load com.example.fmn.plist -->
+<!-- view stats -->
+<!-- launchctl list | grep fmn -->
+<!-- launchctl error <error_code> -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<plist version="1.0">
+
+<dict>
+
+    <key>Label</key>
+    <string>com.example.fmn</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/wrightlin/.local/bin/fmn-daemon</string>
+    </array>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>Sockets</key>
+    <dict>
+        <key>Listeners</key>
+        <dict>
+            <key>SockServiceName</key>
+            <string>8082</string>
+            <key>SockType</key>
+            <string>stream</string>
+            <key>SockFamily</key>
+            <string>IPv4</string>
+        </dict>
+    </dict>
+
+    <!-- make sure the current user has the access to the path -->
+    <key>StandardOutPath</key>
+    <string>/Users/wrightlin/fmn.log</string>
+
+    <!-- make sure the current user has the access to the path -->
+    <key>StandardErrorPath</key>
+    <string>/Users/wrightlin/fmn.error.log</string>
+
+    <key>Debug</key>
+    <true/>
+
+</dict>
+
+</plist>
