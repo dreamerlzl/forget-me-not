@@ -44,7 +44,8 @@ fmn rm <task_id>
 - for macOS, you would need to do the following
     - for iterm2, change the alert settings via "Edit -> Marks and Annotations -> Alerts -> Alert on Next Mark"
     - use `launchd` to deploy daemon so that it starts running on startup; see [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
-- fmn-daemon uses udp for listening
+    - an example could be found in `misc/com.example.fmn.plist`
+- fmn-daemon uses tcp for IPC
   - configure the port to use via env var `REMINDER_DAEMON_ADDR` (localhost:8082 by default)
 - if you don't want to setup a keep-alive daemon, you could just `nohup fmn-deamon &> path/to/log &`
 
