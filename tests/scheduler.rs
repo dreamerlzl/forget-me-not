@@ -6,11 +6,20 @@ use anyhow::{Context, Result};
 use tempfile::tempdir;
 use time::{Duration, OffsetDateTime};
 
+use std::sync::Once;
 use std::thread::sleep;
+
+static INIT: Once = Once::new();
+
+pub fn setup() {
+    INIT.call_once(|| {
+        setup_logger();
+    });
+}
 
 #[test]
 fn once_clock() -> Result<()> {
-    setup_logger();
+    setup();
     // create a temp empty task store
     let dir = tempdir()?;
     let path = dir.path().join("empty");
@@ -27,7 +36,7 @@ fn once_clock() -> Result<()> {
 
 #[test]
 fn periodic_clock() -> Result<()> {
-    setup_logger();
+    setup();
     // create a temp empty task store
     let dir = tempdir()?;
     let path = dir.path().join("empty");
@@ -44,7 +53,7 @@ fn periodic_clock() -> Result<()> {
 
 #[test]
 fn cancel_clock() -> Result<()> {
-    setup_logger();
+    setup();
     // create a temp empty task store
     let dir = tempdir()?;
     let path = dir.path().join("empty");
