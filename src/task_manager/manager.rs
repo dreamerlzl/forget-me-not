@@ -34,7 +34,7 @@ impl<P: AsRef<Path>> TaskManager<P> {
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
-        return self.tasks.clone();
+        self.tasks.clone()
     }
 
     pub fn cancel_task(&mut self, task_id: TaskID) -> Result<()> {
@@ -45,7 +45,7 @@ impl<P: AsRef<Path>> TaskManager<P> {
             self.scheduler.cancel_task(task)?;
             Ok(())
         } else {
-            Err(anyhow!(format!("no such task found: {}", task_id)))
+            Err(anyhow!(format!("no such task found: {task_id}")))
         }
     }
 
@@ -83,7 +83,7 @@ impl<P: AsRef<Path>> TaskManager<P> {
             .create(true)
             .append(true)
             .open(&path)
-            .with_context(|| format!("fail to open task store"))?;
+            .with_context(|| "fail to open task store".to_string())?;
         let tasks = read_tasks(&path)?;
         for task in tasks.iter() {
             scheduler.add_task(task.clone())?;
@@ -102,7 +102,7 @@ where
     P: AsRef<Path>,
 {
     let mut tasks = vec![];
-    let file = File::open(&path).context(format!("fail to load persistent tasks"))?;
+    let file = File::open(&path).context("fail to load persistent tasks".to_string())?;
     for line in io::BufReader::new(file).lines() {
         let line = line?;
         if line.is_empty() {

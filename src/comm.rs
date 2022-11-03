@@ -36,7 +36,7 @@ pub fn parse_duration(duration: &str) -> Result<Duration> {
         ));
     }
     if let Some(captures) = re.captures(duration) {
-        let mut components = [0 as u64; 4];
+        let mut components = [0_u64; 4];
         for (i, component) in ["day", "hour", "minute", "second"].into_iter().enumerate() {
             components[i] = captures
                 .name(component)
@@ -46,7 +46,7 @@ pub fn parse_duration(duration: &str) -> Result<Duration> {
                 })
                 .unwrap_or_else(|| "0")
                 .parse()
-                .context(format!("invalid {}", component))?;
+                .context(format!("invalid {component}"))?;
         }
 
         let secs =
@@ -61,7 +61,7 @@ pub fn get_tzdiff() -> UtcOffset {
     TZDIFF.get_or_init(|| {
         UtcOffset::current_local_offset().expect("fail to get local timezone difference")
     });
-    let offset = TZDIFF.get().unwrap().clone();
+    let offset = *TZDIFF.get().unwrap();
     offset
 }
 
@@ -73,7 +73,7 @@ pub fn get_local_now() -> OffsetDateTime {
 // only used for at
 pub fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
     let re = Regex::new(r"(?P<hour>\d+):(?P<minute>\d+)").unwrap();
-    let mut components = [0 as u8; 3];
+    let mut components = [0_u8; 3];
     if let Some(captures) = re.captures(next_fire) {
         for (i, component) in ["hour", "minute"].into_iter().enumerate() {
             components[i] = captures
@@ -82,11 +82,9 @@ pub fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
                     // dbg!(component, m.as_str());
                     m.as_str()
                 })
-                .ok_or(anyhow!(
-                    "invalid time! correct examples: 13:11:04, 23:01:59"
-                ))?
+                .ok_or_else(|| anyhow!("invalid time! correct examples: 13:11:04, 23:01:59"))?
                 .parse()
-                .context(format!("invalid {}", component))?;
+                .context(format!("invalid {component}"))?;
         }
         let hour = components[0];
         let minute = components[1];

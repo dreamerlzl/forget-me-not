@@ -80,6 +80,6 @@ impl Task {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        to_vec(self).expect(&format!("fail to serialize task {:?}", &self))
+        to_vec(self).unwrap_or_else(|_| panic!("fail to serialize task {:?}", &self))
     }
 }

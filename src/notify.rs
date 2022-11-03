@@ -15,11 +15,11 @@ pub fn desktop_notification(
 
     if let Some(image_path) = image_path {
         info!("add image path hint: {}", &image_path);
-        add_image(&mut notification, &image_path);
+        add_image(&mut notification, image_path);
     }
     if let Some(sound_path) = sound_path {
         info!("add sound path hint: {}", &sound_path);
-        if let Err(e) = play_sound(&sound_path) {
+        if let Err(e) = play_sound(sound_path) {
             error!("fail to play sound {}: {}", &sound_path, e);
         }
     }
