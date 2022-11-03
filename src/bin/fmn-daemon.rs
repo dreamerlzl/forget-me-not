@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 }
 
 fn start_listen<P: AsRef<Path>>(addr: &str, mut tm: TaskManager<P>) -> Result<()> {
-    let listener = TcpListener::bind(addr).context("fail to create udp server socket")?;
+    let listener = TcpListener::bind(addr).context("fail to create server socket")?;
     for stream in listener.incoming() {
         serve(stream?, &mut tm)?;
     }

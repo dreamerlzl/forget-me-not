@@ -142,6 +142,7 @@ impl InnerScheduler {
         match clock_type {
             ClockType::Once(next_fire) => {
                 let sender = sender.clone();
+                let date = next_fire.date();
                 let hour = next_fire.hour();
                 let minute = next_fire.minute();
                 let now = OffsetDateTime::now_utc();
@@ -155,7 +156,9 @@ impl InnerScheduler {
                         let now = OffsetDateTime::now_utc();
                         let now_hour = now.hour() as i8 + hour_diff;
                         let now_minute = now.minute() as i8 + minute_diff;
-                        if (now_hour as u8, now_minute as u8) >= (hour, minute) {
+                        let now_date = now.date();
+                        if now_date == date && (now_hour as u8, now_minute as u8) >= (hour, minute)
+                        {
                             if now_minute - minute as i8 <= 1 {
                                 info!(
                                     "a once clock at {}:{} and description {} fire!",
