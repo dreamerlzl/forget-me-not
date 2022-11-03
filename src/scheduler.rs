@@ -155,20 +155,20 @@ impl InnerScheduler {
                         let now = OffsetDateTime::now_utc();
                         let now_hour = now.hour() as i8 + hour_diff;
                         let now_minute = now.minute() as i8 + minute_diff;
-                        if (now_hour as u8, now_minute as u8) >= (hour, minute)
-                            && now_minute - minute as i8 <= 1
-                        {
-                            info!(
-                                "a once clock at {}:{} and description {} fire!",
-                                hour, minute, &task.description
-                            );
-                            if let Err(e) = desktop_notification(
-                                SUMMARY,
-                                &task.description,
-                                task.get_image(),
-                                task.get_sound(),
-                            ) {
-                                error!("fail to send de notification: {}", e);
+                        if (now_hour as u8, now_minute as u8) >= (hour, minute) {
+                            if now_minute - minute as i8 <= 1 {
+                                info!(
+                                    "a once clock at {}:{} and description {} fire!",
+                                    hour, minute, &task.description
+                                );
+                                if let Err(e) = desktop_notification(
+                                    SUMMARY,
+                                    &task.description,
+                                    task.get_image(),
+                                    task.get_sound(),
+                                ) {
+                                    error!("fail to send de notification: {}", e);
+                                }
                             }
                             sender
                                 .send(TaskCommand::Stop)
