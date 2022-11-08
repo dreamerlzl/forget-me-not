@@ -4,12 +4,11 @@ use serde::Deserialize;
 use serde_json::{to_string, Deserializer};
 #[macro_use]
 extern crate prettytable;
-use prettytable::Table;
-
 use std::env;
 use std::io::{BufReader, Write};
 use std::net::TcpStream;
 
+use prettytable::Table;
 use task_reminder::comm::{get_local_now, parse_at, parse_duration, Request, Response};
 use task_reminder::task_manager::ClockType;
 

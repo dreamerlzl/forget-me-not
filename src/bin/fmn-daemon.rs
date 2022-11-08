@@ -1,15 +1,14 @@
-use task_reminder::comm::{Request, Response};
-use task_reminder::scheduler::Scheduler;
-use task_reminder::task_manager::{Task, TaskManager};
-
-use anyhow::{Context, Result};
-use log::{error, info};
-use serde_json::{to_string, Deserializer};
-
 use std::env;
 use std::io::{BufReader, BufWriter, Write};
 use std::net::TcpListener;
 use std::{net::TcpStream, path::Path};
+
+use anyhow::{Context, Result};
+use log::{error, info};
+use serde_json::{to_string, Deserializer};
+use task_reminder::comm::{Request, Response};
+use task_reminder::scheduler::Scheduler;
+use task_reminder::task_manager::{Task, TaskManager};
 
 fn main() -> Result<()> {
     task_reminder::setup_logger();

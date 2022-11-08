@@ -1,8 +1,8 @@
+use std::process::Command;
+
 use anyhow::{anyhow, Result};
 use log::{error, info};
 use notify_rust::Notification;
-
-use std::process::Command;
 
 pub fn desktop_notification(
     summary: &str,

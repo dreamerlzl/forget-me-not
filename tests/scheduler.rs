@@ -1,13 +1,12 @@
+use std::sync::Once;
+use std::thread::sleep;
+
+use anyhow::{Context, Result};
 use task_reminder::scheduler::Scheduler;
 use task_reminder::setup_logger;
 use task_reminder::task_manager::{manager::TaskManager, ClockType, Task};
-
-use anyhow::{Context, Result};
 use tempfile::tempdir;
 use time::{Duration, OffsetDateTime};
-
-use std::sync::Once;
-use std::thread::sleep;
 
 static INIT: Once = Once::new();
 

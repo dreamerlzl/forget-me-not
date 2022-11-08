@@ -1,10 +1,9 @@
+use anyhow::Result;
 use task_reminder::scheduler::Scheduler;
 use task_reminder::task_manager::{
     manager::{read_tasks, TaskManager},
     ClockType, Task,
 };
-
-use anyhow::Result;
 use tempfile::tempdir;
 use time::macros::datetime;
 

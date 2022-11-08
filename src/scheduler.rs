@@ -1,7 +1,3 @@
-use crate::comm::{get_tzdiff, parse_duration};
-use crate::notify::desktop_notification;
-use crate::task_manager::{ClockType, Task, TaskID};
-
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -13,6 +9,10 @@ use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
+
+use crate::comm::{get_tzdiff, parse_duration};
+use crate::notify::desktop_notification;
+use crate::task_manager::{ClockType, Task, TaskID};
 
 const SUMMARY: &str = "forget-me-not";
 const CONSTANT_WAKUP_SECS: u64 = 30; // a task wake up periodically to check whether the time has

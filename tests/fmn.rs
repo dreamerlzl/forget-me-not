@@ -1,5 +1,6 @@
-use anyhow::Result;
 use std::time::Duration;
+
+use anyhow::Result;
 use task_reminder::comm::{parse_at, parse_duration};
 
 #[test]

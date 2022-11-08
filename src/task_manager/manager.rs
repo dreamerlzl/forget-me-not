@@ -1,15 +1,14 @@
-use anyhow::{anyhow, Context, Result};
-use serde_json::from_str;
-use time::OffsetDateTime;
-
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, Write};
 use std::path::Path;
 
-use crate::scheduler::Scheduler;
-use crate::task_manager::Task;
+use anyhow::{anyhow, Context, Result};
+use serde_json::from_str;
+use time::OffsetDateTime;
 
 use super::{ClockType, TaskID};
+use crate::scheduler::Scheduler;
+use crate::task_manager::Task;
 
 pub struct TaskManager<P: AsRef<Path>> {
     scheduler: Scheduler,
