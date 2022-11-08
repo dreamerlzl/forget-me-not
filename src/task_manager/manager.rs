@@ -37,7 +37,11 @@ impl<P: AsRef<Path>> TaskManager<P> {
     }
 
     pub fn cancel_task(&mut self, task_id: TaskID) -> Result<()> {
-        if let Some(index) = self.tasks.iter().position(|task| task.task_id == task_id) {
+        if let Some(index) = self
+            .tasks
+            .iter()
+            .position(|task| task.task_id.starts_with(&task_id))
+        {
             // rewrite the whole task file
             let task = self.tasks.swap_remove(index);
             self.refresh_storage()?;
