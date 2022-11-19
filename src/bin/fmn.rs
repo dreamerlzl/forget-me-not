@@ -3,14 +3,13 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use serde_json::{from_slice, to_string};
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 use std::env;
 use std::net::{Ipv4Addr, UdpSocket};
 use std::time::Duration;
 
 use task_reminder::comm::{Request, Response};
-use task_reminder::task_manager::ClockType;
+use task_reminder::task_manager::{prompt_task, ClockType};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about=None)]
@@ -60,9 +59,7 @@ fn main() -> Result<()> {
                 Request::Add(description, ClockType::Period(duration))
             }
         },
-        Command::Rm { task_id } => {
-            Request::Cancel(Uuid::parse_str(&task_id).context("pls provide the complete task id")?)
-        }
+        Command::Rm { task_id } => Request::Cancel(task_id),
         Command::Show => Request::Show,
     };
 
@@ -71,8 +68,9 @@ fn main() -> Result<()> {
     match send_request(request.clone(), &dest) {
         Ok(response) => match response {
             Response::GetTasks(tasks) => {
-                for (i, task) in tasks.into_iter().enumerate() {
-                    println!("{} {}", i, task);
+                prompt_task();
+                for task in tasks {
+                    println!("{}", task);
                 }
             }
             _ => println!("success: {:?}", response),
