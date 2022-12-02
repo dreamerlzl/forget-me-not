@@ -35,7 +35,7 @@ enum Command {
     Rm {
         task_id: String,
     },
-    Show,
+    List,
 }
 
 #[derive(Subcommand)]
@@ -97,7 +97,7 @@ fn main() -> Result<()> {
             Request::Add(description, clock_type, image_path, sound_path)
         }
         Command::Rm { task_id } => Request::Cancel(task_id),
-        Command::Show => Request::Show,
+        Command::List => Request::Show,
     };
 
     //println!("request is {:?}", request);

@@ -30,8 +30,8 @@ fmn add -s ~/Downloads/song.mp3 "chill" at 8:00 --per-day
 # remind with an image (only available on kde plasma)
 fmn add -i ~/Downloads/picture.png "chill" after 10h
 
-# show all reminder tasks
-fmn show
+# list all reminder tasks
+fmn list
 
 # remove a task
 fmn rm <task_id>
