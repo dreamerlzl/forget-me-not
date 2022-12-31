@@ -104,6 +104,12 @@ impl Scheduler {
     }
 }
 
+impl Default for Scheduler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InnerScheduler {
     fn new(tzdiff: UtcOffset) -> Self {
         InnerScheduler {

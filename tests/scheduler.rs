@@ -23,9 +23,9 @@ fn once_clock() -> Result<()> {
     let dir = tempdir()?;
     let path = dir.path().join("empty");
     let scheduler = Scheduler::new();
-    let mut tm = TaskManager::new(&path, scheduler)?;
+    let mut tm = TaskManager::new(path, scheduler)?;
     let clock_type = ClockType::Once(OffsetDateTime::now_utc() + Duration::seconds(1));
-    let new_task = Task::new("just a test".to_owned(), clock_type.clone());
+    let new_task = Task::new("just a test".to_owned(), clock_type);
     tm.add_task(new_task)?;
 
     sleep(std::time::Duration::from_secs(2));
@@ -40,9 +40,9 @@ fn periodic_clock() -> Result<()> {
     let dir = tempdir()?;
     let path = dir.path().join("empty");
     let scheduler = Scheduler::new();
-    let mut tm = TaskManager::new(&path, scheduler)?;
+    let mut tm = TaskManager::new(path, scheduler)?;
     let clock_type = ClockType::Period("1s".to_owned());
-    let new_task = Task::new("".to_owned(), clock_type.clone());
+    let new_task = Task::new("".to_owned(), clock_type);
     tm.add_task(new_task)?;
 
     sleep(std::time::Duration::from_secs(3));
@@ -57,9 +57,9 @@ fn cancel_clock() -> Result<()> {
     let dir = tempdir()?;
     let path = dir.path().join("empty");
     let scheduler = Scheduler::new();
-    let mut tm = TaskManager::new(&path, scheduler)?;
+    let mut tm = TaskManager::new(path, scheduler)?;
     let clock_type = ClockType::Period("1s".to_owned());
-    let new_task = Task::new("".to_owned(), clock_type.clone());
+    let new_task = Task::new("".to_owned(), clock_type);
     let task_id = new_task.task_id.clone();
     tm.add_task(new_task)?;
 

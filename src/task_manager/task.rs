@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::to_vec;
 use time::{format_description, OffsetDateTime};
 
+use super::task_context::TaskContext;
+
 pub type TaskID = String;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,6 +15,7 @@ pub struct Task {
     pub description: String,
     pub task_id: TaskID, // used as the unique id of the task
     pub clock_type: ClockType,
+    pub context: TaskContext,
 
     // media shown when the notification fires
     image_path: Option<String>,
@@ -56,11 +59,17 @@ impl Task {
             description,
             clock_type,
             created_at: OffsetDateTime::now_utc(),
+            context: TaskContext::default(),
             task_id: nanoid!(),
             image_path: None,
             sound_path: None,
             // task_id: Uuid::new_v4(),
         }
+    }
+
+    pub fn with_context(mut self, context: TaskContext) -> Self {
+        self.context = context;
+        self
     }
 
     pub fn add_image(&mut self, image_path: String) {

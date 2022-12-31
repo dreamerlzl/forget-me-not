@@ -1,15 +1,16 @@
-use anyhow::{anyhow, Context, Result};
+#![forbid(unsafe_code)]
+
+use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use serde::Deserialize;
-use serde_json::{to_string, Deserializer};
 #[macro_use]
 extern crate prettytable;
 use std::env;
-use std::io::{BufReader, Write};
-use std::net::TcpStream;
 
 use prettytable::Table;
-use task_reminder::comm::{get_local_now, parse_at, parse_duration, Request, Response};
+use task_reminder::client::send_request;
+use task_reminder::comm::{
+    get_local_now, parse_at, parse_duration, ContextCommand, Request, Response,
+};
 use task_reminder::task_manager::ClockType;
 
 #[derive(Parser)]
@@ -36,6 +37,10 @@ enum Command {
         task_id: String,
     },
     List,
+    Context {
+        #[command(subcommand)]
+        command: ContextCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -98,6 +103,7 @@ fn main() -> Result<()> {
         }
         Command::Rm { task_id } => Request::Cancel(task_id),
         Command::List => Request::Show,
+        Command::Context { command } => Request::ContextRequest(command),
     };
 
     //println!("request is {:?}", request);
@@ -112,6 +118,9 @@ fn main() -> Result<()> {
                 }
                 table.printstd();
             }
+            Response::GetContexts(contexts) => {
+                println!(" * {}", contexts.join("\n   "));
+            }
             _ => println!("success: {:?}", response),
         },
         Err(e) => {
@@ -119,18 +128,4 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
-}
-
-fn send_request(request: Request, dest: &str) -> Result<Response> {
-    let mut stream = TcpStream::connect(dest).context("fail to connect to fmn-deamon")?;
-    let serialized = to_string(&request).expect("fail to serialize request");
-    stream
-        .write_all(serialized.as_bytes())
-        .context("fail to send requests to fmn-daemon")?;
-
-    // receive response
-    let mut reader = Deserializer::from_reader(BufReader::new(stream.try_clone()?));
-    let response: Response =
-        Response::deserialize(&mut reader).context("fail to deserialize response")?;
-    Ok(response)
 }

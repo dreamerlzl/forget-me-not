@@ -1,4 +1,8 @@
+#![forbid(unsafe_code)]
+
+pub mod client;
 pub mod comm;
+pub mod daemon;
 pub mod notify;
 pub mod scheduler;
 pub mod task_manager;

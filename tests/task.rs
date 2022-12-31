@@ -1,7 +1,9 @@
+use std::path::Path;
+
 use anyhow::Result;
 use task_reminder::scheduler::Scheduler;
 use task_reminder::task_manager::{
-    manager::{read_tasks, TaskManager},
+    manager::{read_items, TaskManager},
     ClockType, Task,
 };
 use tempfile::tempdir;
@@ -61,4 +63,8 @@ fn remove_task() -> Result<()> {
     assert_eq!(tasks[0].task_id, new_task_id_1);
     assert_eq!(tasks[1].task_id, new_task_id_3);
     Ok(())
+}
+
+fn read_tasks(path: &Path) -> Result<Vec<Task>> {
+    read_items(path)
 }

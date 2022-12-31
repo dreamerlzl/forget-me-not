@@ -1,13 +1,14 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
+use clap::Subcommand;
 use log::warn;
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use time::{OffsetDateTime, UtcOffset};
 
-use crate::task_manager::{ClockType, Task, TaskID};
+use crate::task_manager::{ClockType, Task, TaskContext, TaskID};
 
 static TZDIFF: OnceCell<UtcOffset> = OnceCell::new();
 
@@ -16,14 +17,25 @@ pub enum Request {
     Add(String, ClockType, Option<String>, Option<String>),
     Cancel(TaskID),
     Show,
+    ContextRequest(ContextCommand),
+}
+
+#[derive(Subcommand, Debug, Serialize, Deserialize, Clone)]
+pub enum ContextCommand {
+    Set { context: TaskContext },
+    List,
+    Rm { context: TaskContext },
+    Define { context: TaskContext },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
-    AddSuccess,
-    CancelSuccess,
+    AddSuccess,    // for add task / define context
+    RemoveSuccess, // for rm task/context
     Fail(String),
     GetTasks(Vec<Task>),
+    GetContexts(Vec<TaskContext>), // for list context
+    SetContextSuccess,             // for set context
 }
 
 pub fn parse_duration(duration: &str) -> Result<Duration> {
@@ -67,8 +79,7 @@ pub fn get_tzdiff() -> UtcOffset {
 }
 
 pub fn get_local_now() -> OffsetDateTime {
-    let now = OffsetDateTime::now_utc().to_offset(get_tzdiff());
-    now
+    OffsetDateTime::now_utc().to_offset(get_tzdiff())
 }
 
 // only used for at
