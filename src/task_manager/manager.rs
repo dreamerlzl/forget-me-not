@@ -32,7 +32,12 @@ impl TaskManager {
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
-        self.tasks.inner()
+        let current_context = self.current_context();
+        self.tasks
+            .inner()
+            .into_iter()
+            .filter(|t| t.context == current_context)
+            .collect()
     }
 
     pub fn cancel_task(&mut self, task_id: TaskID) -> Result<()> {
@@ -50,18 +55,18 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn refresh(&mut self) -> Result<()> {
+    pub fn refresh_before(&mut self) {
         let now = OffsetDateTime::now_utc();
-        let before = self.tasks.len();
         self.tasks.retain(|task| match task.clock_type {
             ClockType::Once(next_fire) => next_fire > now,
             _ => true,
         });
-        if self.tasks.len() != before {
-            self.tasks
-                .refresh_storage()
-                .context("fail to refresh task store")?;
-        }
+    }
+
+    pub fn refresh_after(&mut self) -> Result<()> {
+        self.tasks
+            .refresh_storage()
+            .context("fail to refresh task store")?;
         self.contexts
             .refresh_storage()
             .context("fail to refresh context store")?;
@@ -73,6 +78,7 @@ impl TaskManager {
     where
         P: AsRef<Path>,
     {
+        // if you need to change the persistent path of task store, also check tests/cli/helpers
         let task_store_path = path.as_ref().join("task.data");
         let tasks: Vec<Task> = read_items(&task_store_path)
             .context(format!("fail to open task store {task_store_path:?}"))?;
@@ -106,13 +112,9 @@ impl TaskManager {
         if position.is_none() {
             return Err(anyhow!("no such context: {}", &new_context));
         }
-        let task_ids: Vec<TaskID> = self
-            .tasks
-            .iter()
-            .filter(|t| t.context == current_context)
-            .map(|t| t.task_id.clone())
-            .collect();
-        self.cancel_tasks(task_ids)?;
+        for task in self.tasks.iter().filter(|t| t.context == current_context) {
+            self.scheduler.cancel_task(task.to_owned())?;
+        }
         for task in self.tasks.iter().filter(|t| t.context == new_context) {
             self.scheduler.add_task(task.clone())?;
         }
@@ -194,9 +196,9 @@ impl<T: Clone + Serialize> SimpleStore<T> {
         self.mem.iter()
     }
 
-    pub fn len(&self) -> usize {
-        self.mem.len()
-    }
+    //pub fn len(&self) -> usize {
+    //    self.mem.len()
+    //}
 
     //pub fn first(&self) -> Option<&T> {
     //    self.mem.first()
@@ -237,6 +239,7 @@ impl<T: Clone + Serialize> SimpleStore<T> {
             .context(self.persist_path.to_string_lossy().to_string())?;
         for item in self.mem.iter() {
             writer.write_all(serde_json::to_vec(item)?.as_slice())?;
+            writer.write_all("\n".as_bytes())?;
         }
         writer.flush()?;
         Ok(())

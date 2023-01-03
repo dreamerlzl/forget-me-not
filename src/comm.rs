@@ -14,6 +14,7 @@ static TZDIFF: OnceCell<UtcOffset> = OnceCell::new();
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Request {
+    // name, clock_type, image_path, sound_path
     Add(String, ClockType, Option<String>, Option<String>),
     Cancel(TaskID),
     Show,

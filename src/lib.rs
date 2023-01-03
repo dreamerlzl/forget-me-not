@@ -3,6 +3,7 @@
 pub mod client;
 pub mod comm;
 pub mod daemon;
+pub mod format;
 pub mod notify;
 pub mod scheduler;
 pub mod task_manager;

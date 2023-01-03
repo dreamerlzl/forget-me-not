@@ -15,10 +15,8 @@ pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
     for request in requests {
         let request = request?;
         info!("receive a request: {:?}", request);
-        let response = if let Err(e) = tm.refresh() {
-            error!("fail to refresh: {:?}", e.source());
-            Response::Fail(e.to_string())
-        } else {
+        tm.refresh_before();
+        let response = {
             match request {
                 Request::Add(description, clock_type, image_path, sound_path) => {
                     let mut task =
@@ -61,6 +59,9 @@ pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
         writer
             .flush()
             .context("fail to flush fmn-daemon tcp writer")?;
+        if let Err(e) = tm.refresh_after() {
+            error!("fail to flush changes to persistent storage: {e}");
+        }
     }
     Ok(())
 }

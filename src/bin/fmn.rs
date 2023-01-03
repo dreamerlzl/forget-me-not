@@ -2,11 +2,9 @@
 
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-#[macro_use]
-extern crate prettytable;
 use std::env;
+use task_reminder::format::tabular_output;
 
-use prettytable::Table;
 use task_reminder::client::send_request;
 use task_reminder::comm::{
     get_local_now, parse_at, parse_duration, ContextCommand, Request, Response,
@@ -111,12 +109,7 @@ fn main() -> Result<()> {
     match send_request(request.clone(), &dest) {
         Ok(response) => match response {
             Response::GetTasks(tasks) => {
-                let mut table = Table::new();
-                table.add_row(row!["ID", "TYPE", "DESCRIPTION"]);
-                for task in tasks {
-                    table.add_row(row![task.task_id, task.clock_type, task.description]);
-                }
-                table.printstd();
+                println!("{}", tabular_output(&tasks));
             }
             Response::GetContexts(contexts) => {
                 println!(" * {}", contexts.join("\n   "));

@@ -2,6 +2,7 @@
 name = "task-reminder"
 version = "0.1.0"
 edition = "2021"
+autotests = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,9 +21,9 @@ serde_json = "1.0.85"
 time = { version = "0.3.15", features = ["local-offset", "serde", "macros", "formatting"] }
 tokio = { version = "1.21.2", features = ["time", "rt", "sync", "macros"] }
 
-#[[test]]
-#path = "tests/entry.rs"
-#name = "integration"
+[[test]]
+path = "tests/entry.rs"
+name = "integration"
 
 [dev-dependencies]
 assert_cmd = "2.0.7"
