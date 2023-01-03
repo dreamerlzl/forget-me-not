@@ -1,6 +1,7 @@
 <div align="center">
   <!-- CI -->
   <img src="https://github.com/dreamerlzl/forget-me-not/workflows/CI/badge.svg" />
+  <img src="https://codecov.io/gh/dreamerlzl/forget-me-not/branch/main/graph/badge.svg" />
   <a href="https://github.com/rust-secure-code/safety-dance/">
     <img src="https://img.shields.io/badge/unsafe-forbidden-success.svg?style=flat-square"
       alt="Unsafe Rust forbidden" />
@@ -44,6 +45,11 @@ fmn list
 
 # remove a task
 fmn rm <task_id>
+
+# context for work/home
+fmn context define work
+fmn context set work
+fmn add "a work-only task" at 10:00
 ```
 
 ## daemon setup
