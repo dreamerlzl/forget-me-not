@@ -1,3 +1,12 @@
+<div align="center">
+  <!-- CI -->
+  <img src="https://github.com/dreamerlzl/forget-me-not/workflows/CI/badge.svg" />
+  <a href="https://github.com/rust-secure-code/safety-dance/">
+    <img src="https://img.shields.io/badge/unsafe-forbidden-success.svg?style=flat-square"
+      alt="Unsafe Rust forbidden" />
+  </a>
+</div>
+
 # overview
 - fmn(forget-me-not) is a command-line task reminder sending desktop notifications for linux/macOS(M1, intel)
   - relying on [notify-rust](https://github.com/hoodie/notify-rust) it's cross-platform out of box
