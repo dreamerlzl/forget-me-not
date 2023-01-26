@@ -34,7 +34,12 @@ fn test_duration_err() {
 #[test]
 fn test_parse_at() -> Result<()> {
     // no support for seconds
-    let test_cases = vec![("13:24", 13, 24), ("23:01", 23, 1), ("01:59", 1, 59)];
+    let test_cases = vec![
+        ("13:24", 13, 24),
+        ("23:01", 23, 1),
+        ("01:59", 1, 59),
+        ("9", 9, 0),
+    ];
     for (next_fire, hour, minute) in test_cases {
         let next_fire = parse_at(next_fire)?;
         let parsed_hour = next_fire.hour();

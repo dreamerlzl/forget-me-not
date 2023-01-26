@@ -85,19 +85,16 @@ pub fn get_local_now() -> OffsetDateTime {
 
 // only used for at
 pub fn parse_at(next_fire: &str) -> Result<OffsetDateTime> {
-    let re = Regex::new(r"(?P<hour>\d+):(?P<minute>\d+)").unwrap();
+    let re = Regex::new(r"(?P<hour>\d+)(?::(?P<minute>\d+))?").unwrap();
     let mut components = [0_u8; 3];
     if let Some(captures) = re.captures(next_fire) {
-        for (i, component) in ["hour", "minute"].into_iter().enumerate() {
-            components[i] = captures
-                .name(component)
-                .map(|m| {
-                    // dbg!(component, m.as_str());
-                    m.as_str()
-                })
-                .ok_or_else(|| anyhow!("invalid time! correct examples: 13:11:04, 23:01:59"))?
-                .parse()
-                .context(format!("invalid {component}"))?;
+        for (i, capture) in captures.iter().skip(1).enumerate() {
+            if let Some(m) = capture {
+                components[i] = m
+                    .as_str()
+                    .parse()
+                    .context(format!("invalid time: {}", m.as_str()))?;
+            }
         }
         let hour = components[0];
         let minute = components[1];
