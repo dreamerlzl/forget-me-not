@@ -1,10 +1,18 @@
-use super::helpers::{fmn, spawn_test_daemon};
 use anyhow::Result;
 use predicates::str::diff;
 
+use super::helpers::{fmn, spawn_test_daemon};
+
+#[test]
+fn test_define_context() -> Result<()> {
+    let guard = spawn_test_daemon("test_define_context")?;
+    define_context("a");
+    Ok(())
+}
+
 #[test]
 fn test_list_context() -> Result<()> {
-    let guard = spawn_test_daemon("test_define_context")?;
+    let guard = spawn_test_daemon("test_list_context")?;
     define_context("a");
     define_context("b");
     list_context(vec!["default", "a", "b"]);
@@ -17,7 +25,7 @@ fn test_list_context() -> Result<()> {
 
 #[test]
 fn test_switch_context() -> Result<()> {
-    let _guard = spawn_test_daemon("test_define_context")?;
+    let _guard = spawn_test_daemon("test_switch_context")?;
     define_context("foo");
     set_context("foo");
     list_context(vec!["foo", "default"]);

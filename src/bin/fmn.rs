@@ -1,14 +1,14 @@
 #![forbid(unsafe_code)]
 
+use std::env;
+
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
-use std::env;
-use task_reminder::format::tabular_output;
-
 use task_reminder::client::send_request;
 use task_reminder::comm::{
     get_local_now, parse_at, parse_duration, ContextCommand, Request, Response,
 };
+use task_reminder::format::tabular_output;
 use task_reminder::task_manager::ClockType;
 
 #[derive(Parser)]
@@ -114,10 +114,13 @@ fn main() -> Result<()> {
             Response::GetContexts(contexts) => {
                 println!(" * {}", contexts.join("\n   "));
             }
-            _ => println!("success: {:?}", response),
+            Response::Fail(error_string) => {
+                eprintln!("request \"{request:?}\" failed: {error_string}");
+            }
+            _ => println!("success: {response:?}"),
         },
         Err(e) => {
-            println!("request \"{:?}\" failed: {}", request, e);
+            eprintln!("request \"{request:?}\" failed: {e}");
         }
     }
     Ok(())

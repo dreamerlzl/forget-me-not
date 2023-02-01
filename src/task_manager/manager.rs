@@ -45,8 +45,12 @@ impl TaskManager {
     }
 
     fn cancel_tasks(&mut self, task_ids: Vec<TaskID>) -> Result<()> {
+        let context = self.current_context();
         for task_id in task_ids {
-            if let Some(task) = self.tasks.remove_first(|t| t.task_id.starts_with(&task_id)) {
+            if let Some(task) = self
+                .tasks
+                .remove_first(|t| t.task_id.starts_with(&task_id) && t.context == context)
+            {
                 self.scheduler.cancel_task(task)?;
             } else {
                 return Err(anyhow!(format!("no such task found: {task_id}")));
@@ -128,6 +132,9 @@ impl TaskManager {
     }
 
     pub fn define_context(&mut self, context: TaskContext) -> Result<()> {
+        if self.list_context().iter().any(|c| *c == context) {
+            return Err(anyhow!(format!("context {context} already exists")));
+        }
         self.contexts.push(context);
         Ok(())
     }
