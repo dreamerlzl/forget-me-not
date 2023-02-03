@@ -144,11 +144,10 @@ impl InnerScheduler {
         info!("add new clock task: {}, {}", task_id, clock_type);
         let (sender, receiver) = broadcast::channel(1);
         // enter the tokio rt context so that we can use tokio::spawn
-        let (hour_diff, minute_diff, _) = self.tzdiff.as_hms();
+        let tzdiff = self.tzdiff.clone();
         match clock_type {
             ClockType::Once(next_fire) => {
                 let sender = sender.clone();
-                let date = next_fire.date();
                 let hour = next_fire.hour();
                 let minute = next_fire.minute();
                 let now = OffsetDateTime::now_utc();
@@ -160,12 +159,9 @@ impl InnerScheduler {
                     move || info!("once task at {} is removed!", next_fire),
                     move || {
                         let now = OffsetDateTime::now_utc();
-                        let now_hour = now.hour() as i8 + hour_diff;
-                        let now_minute = now.minute() as i8 + minute_diff;
-                        let now_date = now.date();
-                        if now_date == date && (now_hour as u8, now_minute as u8) >= (hour, minute)
-                        {
-                            if now_minute - minute as i8 <= 1 {
+                        let now_with_offset = now.to_offset(tzdiff);
+                        if now_with_offset >= next_fire {
+                            if now_with_offset.minute() - next_fire.minute() <= 1 {
                                 info!(
                                     "a once clock at {}:{} and description {} fire!",
                                     hour, minute, &task.description
@@ -200,10 +196,8 @@ impl InnerScheduler {
                         info!("everyday task at {}:{} is removed!", hour, minute);
                     },
                     move || {
-                        let now = OffsetDateTime::now_utc();
-                        let now_hour = now.hour() as i8 + hour_diff;
-                        let now_minute = now.minute() as i8 + minute_diff;
-                        if (now_hour as u8, now_minute as u8) == (hour, minute) {
+                        let now = OffsetDateTime::now_utc().to_offset(tzdiff);
+                        if (now.hour() as u8, now.minute() as u8) == (hour, minute) {
                             info!(
                                 "a clock at {}:{} everyday and description {} fire!",
                                 hour, minute, &task.description

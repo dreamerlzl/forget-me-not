@@ -47,6 +47,9 @@ pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
                 Request::ContextRequest(command) => handle_context_command(command, tm),
             }
         };
+        if let Err(e) = tm.refresh_after() {
+            error!("fail to flush changes to persistent storage: {e}");
+        }
         let serialized = to_string(&response).expect("fail to serialize response");
         match writer.write_all(serialized.as_bytes()) {
             Ok(_) => {
@@ -59,9 +62,6 @@ pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
         writer
             .flush()
             .context("fail to flush fmn-daemon tcp writer")?;
-        if let Err(e) = tm.refresh_after() {
-            error!("fail to flush changes to persistent storage: {e}");
-        }
     }
     Ok(())
 }
