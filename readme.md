@@ -8,6 +8,10 @@
   </a>
 </div>
 
+
+https://user-images.githubusercontent.com/28644777/216806800-06c7951c-97c3-49e6-9058-9e58a6edc80a.mp4
+
+
 # overview
 - fmn(forget-me-not) is a command-line task reminder sending desktop notifications for linux/macOS(M1, intel)
   - relying on [notify-rust](https://github.com/hoodie/notify-rust) it's cross-platform out of box
@@ -37,7 +41,7 @@ fmn add "foo bar" at 19:30 --per-day
 # remind with a sound
 fmn add -s ~/Downloads/song.mp3 "chill" at 8:00 --per-day
 
-# remind with an image (only available on kde plasma)
+# remind with an image (only available on xorg-based desktop environment)
 fmn add -i ~/Downloads/picture.png "chill" after 10h
 
 # list all reminder tasks
