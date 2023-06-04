@@ -6,7 +6,7 @@ use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use task_reminder::client::send_request;
 use task_reminder::comm::{
-    get_local_now, parse_at, parse_duration, ContextCommand, Request, Response,
+    get_local_now, parse_at, parse_date, parse_duration, ContextCommand, Request, Response,
 };
 use task_reminder::format::tabular_output;
 use task_reminder::task_manager::ClockType;
@@ -54,6 +54,9 @@ enum AddCommand {
     Per {
         duration: String,
     },
+    On {
+        date: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -85,6 +88,10 @@ fn main() -> Result<()> {
                 AddCommand::Per { duration } => {
                     let _ = parse_duration(&duration)?;
                     ClockType::Period(duration)
+                }
+                AddCommand::On { date } => {
+                    let next_fire = parse_date(&date)?;
+                    ClockType::Once(next_fire)
                 }
             };
             if image_path.is_none() {

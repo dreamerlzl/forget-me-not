@@ -10,7 +10,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 
-use crate::comm::{get_tzdiff, parse_duration};
+use crate::comm::{get_local_utc_offset, parse_duration};
 use crate::notify::desktop_notification;
 use crate::task_manager::{ClockType, Task, TaskID};
 
@@ -42,7 +42,7 @@ enum TaskCommand {
 impl Scheduler {
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel(8);
-        let tzdiff = get_tzdiff();
+        let tzdiff = get_local_utc_offset();
         std::thread::spawn(
             move || match Builder::new_current_thread().enable_all().build() {
                 Ok(rt) => {

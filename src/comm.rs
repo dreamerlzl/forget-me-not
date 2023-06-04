@@ -6,7 +6,7 @@ use log::warn;
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use time::{OffsetDateTime, UtcOffset};
+use time::{format_description::well_known::Iso8601, OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
 use crate::task_manager::{ClockType, Task, TaskContext, TaskID};
 
@@ -71,7 +71,7 @@ pub fn parse_duration(duration: &str) -> Result<Duration> {
     }
 }
 
-pub fn get_tzdiff() -> UtcOffset {
+pub fn get_local_utc_offset() -> UtcOffset {
     TZDIFF.get_or_init(|| {
         UtcOffset::current_local_offset().expect("fail to get local timezone difference")
     });
@@ -80,7 +80,14 @@ pub fn get_tzdiff() -> UtcOffset {
 }
 
 pub fn get_local_now() -> OffsetDateTime {
-    OffsetDateTime::now_utc().to_offset(get_tzdiff())
+    OffsetDateTime::now_utc().to_offset(get_local_utc_offset())
+}
+
+// parse user's date input
+pub fn parse_date(date: &str) -> Result<OffsetDateTime> {
+    PrimitiveDateTime::parse(date, &Iso8601::DEFAULT)
+        .map(|x| x.assume_offset(get_local_utc_offset()))
+        .context("fail to parse Iso8601 date")
 }
 
 // only used for at
