@@ -8,19 +8,22 @@
   </a>
 </div>
 
-
 https://user-images.githubusercontent.com/28644777/216806800-06c7951c-97c3-49e6-9058-9e58a6edc80a.mp4
 
-
 # overview
-- fmn(forget-me-not) is a command-line task reminder sending desktop notifications for linux/macOS(M1, intel)
-  - relying on [notify-rust](https://github.com/hoodie/notify-rust) it's cross-platform out of box
+
+- fmn(forget-me-not) is a command-line task reminder sending desktop
+  notifications for linux/macOS(M1, intel)
+  - relying on [notify-rust](https://github.com/hoodie/notify-rust) it's
+    cross-platform out of box
 - consisting of two executables, a client and a daemon
 - tasks are stored as a file for persistence
   - configure it via env var `REMINDER_TASK_STORE`
 
 # usage
+
 ## client
+
 ```bash
 # help
 fmn -h
@@ -37,6 +40,9 @@ fmn add "foo bar" at 19:30
 
 # remind me at 19:30 everyday
 fmn add "foo bar" at 19:30 --per-day
+
+# date format: iso8601
+fmn add "test" on 2023-11-12T09:20
 
 # remind with a sound
 fmn add -s ~/Downloads/song.mp3 "chill" at 8:00 --per-day
@@ -57,22 +63,32 @@ fmn add "a work-only task" at 10:00
 ```
 
 ## daemon setup
+
 - for linux, you would need to deploy it via `systemd` or `initd`
-    - for an example of user-level systemd, check `misc/fmn.service`
-    - you would need to provide a value for `ExecStart` to specify the path to `fmn-daemon`
+  - for an example of user-level systemd, check `misc/fmn.service`
+  - you would need to provide a value for `ExecStart` to specify the path to
+    `fmn-daemon`
 - for macOS, you would need to do the following
-    - for iterm2, change the alert settings via "Edit -> Marks and Annotations -> Alerts -> Alert on Next Mark"
-    - use `launchd` to deploy daemon so that it starts running on startup; see [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
-    - an example could be found in `misc/com.example.fmn.plist`
+  - for iterm2, change the alert settings via "Edit -> Marks and Annotations ->
+    Alerts -> Alert on Next Mark"
+  - use `launchd` to deploy daemon so that it starts running on startup; see
+    [this](https://support.apple.com/guide/terminal/script-management-with-launchd-apdc6c1077b-5d5d-4d35-9c19-60f2397b2369/mac)
+  - an example could be found in `misc/com.example.fmn.plist`
 - fmn-daemon uses tcp for IPC
-  - configure the port to use via env var `REMINDER_DAEMON_ADDR` (localhost:8082 by default)
-- if you don't want to setup a keep-alive daemon, you could just `nohup fmn-deamon &> path/to/log &`
+  - configure the port to use via env var `REMINDER_DAEMON_ADDR` (localhost:8082
+    by default)
+- if you don't want to setup a keep-alive daemon, you could just
+  `nohup fmn-deamon &> path/to/log &`
 
 # notification media
-- An image(only linux) and a sound(linux/mac) could be attached to every notification by providing the env vars when running `fmn`
-  - `FMN_IMAGE_PATH` 
-  - `FMN_SOUND_PATH` 
-  - **note: when you configure these variables in files like `~/.bash_profile` or `~/.config/fish/config.fish`, please use the full path!**
-  - `fmn add -i` and `fmn add -s` would have higher priority; these two env vars could be the defaults
+
+- An image(only linux) and a sound(linux/mac) could be attached to every
+  notification by providing the env vars when running `fmn`
+  - `FMN_IMAGE_PATH`
+  - `FMN_SOUND_PATH`
+  - **note: when you configure these variables in files like `~/.bash_profile`
+    or `~/.config/fish/config.fish`, please use the full path!**
+  - `fmn add -i` and `fmn add -s` would have higher priority; these two env vars
+    could be the defaults
 - on macOS, the built-in `/usr/bin/afplay` would be used to play the sound
 - on Linux, `paplay` would be used to play audio
