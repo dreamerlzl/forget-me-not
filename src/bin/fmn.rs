@@ -112,7 +112,11 @@ fn main() -> Result<()> {
     };
 
     //println!("request is {:?}", request);
+    #[cfg(feature = "tcp")]
     let dest = env::var("FMN_DAEMON_ADDR").unwrap_or_else(|_| "127.0.0.1:8082".to_owned());
+
+    #[cfg(feature = "unix_socket")]
+    let dest = env::var("FMN_DAEMON_ADDR").unwrap_or_else(|_| "/tmp/fmn.sock".to_owned());
     match send_request(request.clone(), &dest) {
         Ok(response) => match response {
             Response::GetTasks(tasks) => {

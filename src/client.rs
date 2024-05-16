@@ -1,4 +1,5 @@
 use std::io::{BufReader, Write};
+#[cfg(feature = "tcp")]
 use std::net::TcpStream;
 
 use anyhow::{Context, Result};
@@ -8,8 +9,15 @@ use serde_json::{to_string, Deserializer};
 use crate::comm::{Request, Response};
 
 pub fn send_request(request: Request, dest: &str) -> Result<Response> {
-    let mut stream =
-        TcpStream::connect(dest).context(format!("fail to connect to fmn-deamon: {dest}"))?;
+    #[cfg(feature = "tcp")]
+    let mut stream = TcpStream::connect(dest)
+        .context(format!("fail to connect to fmn-deamon using tcp: {dest}"))?;
+
+    #[cfg(feature = "unix_socket")]
+    let mut stream = std::os::unix::net::UnixStream::connect(dest).context(format!(
+        "fail to connect to fmn-deamon using unix socket: {dest}"
+    ))?;
+
     let serialized = to_string(&request).expect("fail to serialize request");
     stream
         .write_all(serialized.as_bytes())

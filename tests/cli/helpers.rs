@@ -1,7 +1,11 @@
-use std::{io, net::TcpListener, sync::mpsc::SyncSender};
+use std::io::{BufReader, BufWriter};
+#[cfg(feature = "tcp")]
+use std::net::TcpListener;
+#[cfg(feature = "unix_socket")]
+use std::os::unix::net::UnixListener;
+use std::{io, sync::mpsc::SyncSender};
 
 use anyhow::Result;
-
 use assert_cmd::Command;
 use log::{error, info};
 use predicates::str::diff;
@@ -58,17 +62,33 @@ impl Drop for DaemonGuard {
 pub fn spawn_test_daemon(id: &str) -> Result<DaemonGuard> {
     let id = id.to_owned();
     let fmn_dir = tempdir()?;
+
+    #[cfg(feature = "unix_socket")]
+    let addr = fmn_dir.path().join("fmn.sock");
+    #[cfg(feature = "unix_socket")]
+    std::env::set_var("FMN_DAEMON_ADDR", addr.to_str().unwrap());
+
+    #[cfg(feature = "tcp")]
     let addr = "127.0.0.1:0";
+
     std::fs::create_dir_all(&fmn_dir)?;
     let scheduler = Scheduler::new();
 
+    #[cfg(feature = "tcp")]
     let listener = TcpListener::bind(addr)?;
-    listener
-        .set_nonblocking(true)
-        .expect("can't set tcp listener as non-blocking");
-    let dest = listener.local_addr()?.to_string();
-    std::env::set_var("FMN_DAEMON_ADDR", &dest);
-    info!("creating fmn-daemon for {} at {}", id, dest);
+    #[cfg(feature = "tcp")]
+    {
+        listener
+            .set_nonblocking(true)
+            .expect("can't set tcp listener as non-blocking");
+        let dest = listener.local_addr()?.to_string();
+        std::env::set_var("FMN_DAEMON_ADDR", &dest);
+        info!("creating fmn-daemon for {} at {}", id, dest);
+    };
+
+    #[cfg(feature = "unix_socket")]
+    let listener = UnixListener::bind(addr)?;
+
     let mut tm = TaskManager::new(&fmn_dir, scheduler)?;
     let mut guard = DaemonGuard::new(id, fmn_dir);
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
@@ -76,7 +96,8 @@ pub fn spawn_test_daemon(id: &str) -> Result<DaemonGuard> {
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    if let Err(e) = serve(stream, &mut tm) {
+                    if let Err(e) = serve(BufReader::new(&stream), BufWriter::new(&stream), &mut tm)
+                    {
                         error!("error processing stream: {}", e);
                     }
                 }

@@ -8,6 +8,5 @@ pub fn tabular_output(tasks: &Vec<Task>) -> String {
     for task in tasks {
         table.add_row(row![task.task_id, task.clock_type, task.description]);
     }
-    let result = table.to_string();
-    result
+    table.to_string()
 }

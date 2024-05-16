@@ -1,5 +1,4 @@
-use std::io::{BufReader, BufWriter, Write};
-use std::net::TcpStream;
+use std::io::{BufReader, BufWriter, Read, Write};
 
 use anyhow::{Context, Result};
 use log::{error, info};
@@ -8,9 +7,10 @@ use serde_json::{to_string, Deserializer};
 use crate::comm::{ContextCommand, Request, Response};
 use crate::task_manager::{Task, TaskManager};
 
-pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
-    let reader = BufReader::new(&stream);
-    let mut writer = BufWriter::new(&stream);
+pub fn serve<S>(reader: BufReader<S>, mut writer: BufWriter<S>, tm: &mut TaskManager) -> Result<()>
+where
+    S: Read + Write,
+{
     let requests = Deserializer::from_reader(reader).into_iter::<Request>();
     for request in requests {
         let request = request?;
@@ -65,6 +65,8 @@ pub fn serve(stream: TcpStream, tm: &mut TaskManager) -> Result<()> {
     }
     Ok(())
 }
+
+// pub fn serveUnixStream(stream: UnixStream, tm: &mut TaskManager)
 
 fn handle_context_command(command: ContextCommand, tm: &mut TaskManager) -> Response {
     match command {

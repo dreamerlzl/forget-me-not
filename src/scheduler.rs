@@ -144,7 +144,7 @@ impl InnerScheduler {
         info!("add new clock task: {}, {}", task_id, clock_type);
         let (sender, receiver) = broadcast::channel(1);
         // enter the tokio rt context so that we can use tokio::spawn
-        let tzdiff = self.tzdiff.clone();
+        let tzdiff = self.tzdiff;
         match clock_type {
             ClockType::Once(next_fire) => {
                 let sender = sender.clone();
@@ -197,7 +197,7 @@ impl InnerScheduler {
                     },
                     move || {
                         let now = OffsetDateTime::now_utc().to_offset(tzdiff);
-                        if (now.hour() as u8, now.minute() as u8) == (hour, minute) {
+                        if (now.hour(), now.minute()) == (hour, minute) {
                             info!(
                                 "a clock at {}:{} everyday and description {} fire!",
                                 hour, minute, &task.description
